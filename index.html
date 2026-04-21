@@ -305,7 +305,7 @@ tbody td{padding:10px 10px;text-align:center;vertical-align:middle}
       <div class="nav-section">أخرى</div>
       <button class="nav-btn" data-page="settings"><span class="nav-icon">⚙️</span> الإعدادات</button>
       <button class="nav-btn" data-page="help"><span class="nav-icon">📖</span> دليل الإعداد</button>
-      
+      <button class="nav-btn admin-only" data-page="script"><span class="nav-icon">💾</span> كود الباك-إند</button>
     </nav>
     <div class="sb-credit">
       <strong>Shady Nassef</strong><br>
@@ -504,7 +504,20 @@ tbody td{padding:10px 10px;text-align:center;vertical-align:middle}
           </div>
         </div>
 
-      
+        <!-- API -->
+        <div class="card">
+          <div class="card-h"><h3>⚙️ ربط Google Sheets</h3></div>
+          <div class="card-b">
+            <div class="fld" style="max-width:620px">
+              <label>رابط Google Apps Script Web App</label>
+              <input id="apiUrl" placeholder="https://script.google.com/macros/s/.../exec"/>
+              <input id="apiUrlInput" type="hidden"/>
+            </div>
+            <div style="height:12px"></div>
+            <button class="btn btn-primary" id="saveApiBtn">حفظ وتجربة الاتصال</button>
+            <p id="connMsg" style="margin-top:12px;color:var(--muted);font-size:13px"></p>
+          </div>
+        </div>
 
         <!-- Users Management -->
         <div class="card admin-only">
@@ -582,6 +595,459 @@ tbody td{padding:10px 10px;text-align:center;vertical-align:middle}
         </div>
       </section>
 
+      <!-- SCRIPT PAGE -->
+      <section class="page admin-only" id="page-script">
+        <div class="card">
+          <div class="card-h" style="background:#1e293b">
+            <h3>💾 كود backend_api.gs</h3>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn btn-ghost btn-sm" onclick="copyGsCode()" id="copyGsBtn">📋 نسخ الكود</button>
+              <button class="btn btn-ghost btn-sm" onclick="downloadGsCode()">⬇️ تحميل .gs</button>
+            </div>
+          </div>
+          <div class="card-b" style="padding:0">
+            <div style="background:#0f172a;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+              <div style="color:#94a3b8;font-size:13px">
+                📁 <strong style="color:#e2e8f0">backend_api.gs</strong>
+                &nbsp;|&nbsp; آخر تحديث: <span style="color:#38bdf8">21 أبريل 2026 — v3</span>
+                &nbsp;|&nbsp; إعداد: <span style="color:#34d399">Shady Nassef</span>
+              </div>
+              <div style="background:#1e293b;border-radius:8px;padding:5px 12px;font-size:12px;color:#64748b">
+                Google Apps Script
+              </div>
+            </div>
+            <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:0 0 14px 14px;padding:12px 16px;font-size:12px;color:var(--orange2);display:flex;gap:8px;align-items:flex-start">
+              ⚠️ <span>عند التحديث: افتح Apps Script → احذف الكود القديم → الصق هذا الكود → احفظ → Deploy → <strong>New Deployment</strong> (أو انشر على نفس الـ Deployment الموجود)</span>
+            </div>
+            <div style="overflow-x:auto;max-height:600px;overflow-y:auto">
+        <pre id="gsCodeBlock" style="margin:0;padding:20px 24px;background:#0f172a;color:#e2e8f0;font-family:Consolas,Monaco,'Courier New',monospace;font-size:12px;line-height:1.7;tab-size:2;direction:ltr;text-align:left;white-space:pre">// ============================================================
+//  نظام إدارة العمالة — backend_api.gs  v3
+//  إعداد: Shady Nassef © 2026
+// ============================================================
+
+// ⚠️ ضع هنا ID الـ Spreadsheet الخاص بك
+// افتح Google Sheets → انظر للرابط: .../spreadsheets/d/SPREADSHEET_ID/edit
+var SPREADSHEET_ID = 'ضع_ID_الشيت_هنا';
+
+var SHEETS = {
+  employees : 'Employees',
+  payments  : 'Payments',
+  archive   : 'Archive',
+  settings  : 'Settings'
+};
+
+function getSpreadsheet() {
+  return SpreadsheetApp.openById(SPREADSHEET_ID);
+}
+
+// ─── Response Helper ──────────────────────────────────────
+function makeResponse(data) {
+  return ContentService
+    .createTextOutput(JSON.stringify(data))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+// ─── Entry Points ─────────────────────────────────────────
+function doGet(e) {
+  var params = (e && e.parameter) ? e.parameter : {};
+  var action = params.action || '';
+  var body = {};
+  if (params.payload) {
+    try { body = JSON.parse(params.payload); action = body.action || action; } catch(err) {}
+  }
+  var result;
+  try { result = route(action, params, body); }
+  catch(err) { result = {error: err.message}; }
+  return makeResponse(result);
+}
+
+function doPost(e) {
+  var body = {};
+  try {
+    if (e && e.postData && e.postData.contents) {
+      body = JSON.parse(e.postData.contents);
+    } else if (e && e.parameter && e.parameter.payload) {
+      body = JSON.parse(e.parameter.payload);
+    }
+  } catch(err) {
+    return makeResponse({error: 'Parse error: ' + err.message});
+  }
+  var result;
+  try { result = route(body.action || '', {}, body); }
+  catch(err) { result = {error: err.message, stack: err.stack}; }
+  return makeResponse(result);
+}
+
+function route(action, params, body) {
+  switch(action) {
+    case 'getDashboard'    : return getDashboard();
+    case 'getEmployees'    : return getEmployees();
+    case 'getPayments'     : return getPayments();
+    case 'getArchive'      : return getArchive();
+    case 'getAlerts'       : return getAlerts();
+    case 'getSettings'     : return getSettings();
+    case 'saveSettings'    : return saveSettings(body);
+    case 'addEmployee'     : return addEmployee(body);
+    case 'addPayment'      : return addPayment(body);
+    case 'archiveEmployee' : return archiveEmployee(body);
+    case 'updateEmployee'  : return updateEmployee(body);
+    default: return {error: 'Unknown action: ' + action};
+  }
+}
+
+// ─── Setup ────────────────────────────────────────────────
+function setupSheets() {
+  var defs = {
+    Employees: ['name','iqamaNo','iqamaExpiry','mobile','branch','iqamaCost','monthlyFee','months','paid','notes','status','addedDate'],
+    Payments:  ['name','iqamaNo','branch','date','amount','type','notes','hijriMonth','hijriYear'],
+    Archive:   ['name','iqamaNo','branch','status','totalPaid','balance','reason','archiveDate','mobile','notes'],
+    Settings:  ['key','value']
+  };
+  var ss = getSpreadsheet();
+  var names = Object.keys(defs);
+  for (var i = 0; i < names.length; i++) {
+    var name = names[i];
+    var sh = ss.getSheetByName(name);
+    if (!sh) {
+      sh = ss.insertSheet(name);
+      sh.getRange(1, 1, 1, defs[name].length).setValues([defs[name]]);
+      sh.getRange(1, 1, 1, defs[name].length)
+        .setBackground('#0d5189').setFontColor('#ffffff').setFontWeight('bold');
+    }
+  }
+  var stSh = ss.getSheetByName('Settings');
+  if (stSh && stSh.getLastRow() <= 1) {
+    stSh.getRange(2, 1, 5, 2).setValues([
+      ['kafala',      250],
+      ['iqama3',     3550],
+      ['iqama6',     7100],
+      ['iqama12',   14200],
+      ['ramadanFree','true']
+    ]);
+  }
+  SpreadsheetApp.getUi().alert('✅ تم إعداد الشيتات بنجاح!');
+}
+
+// ─── Settings ─────────────────────────────────────────────
+function getSettings() {
+  var sh = getSpreadsheet().getSheetByName(SHEETS.settings);
+  if (!sh || sh.getLastRow() < 2) {
+    return {kafala:250, iqama3:3550, iqama6:7100, iqama12:14200, ramadanFree:true};
+  }
+  var numRows = sh.getLastRow() - 1;
+  var rows = sh.getRange(2, 1, numRows, 2).getValues();
+  var r = {kafala:250, iqama3:3550, iqama6:7100, iqama12:14200, ramadanFree:true};
+  for (var i = 0; i < rows.length; i++) {
+    var k = rows[i][0], v = rows[i][1];
+    if (k === 'ramadanFree') r[k] = (v === 'true' || v === true);
+    else if (k) r[k] = +v || r[k];
+  }
+  return r;
+}
+
+function saveSettings(body) {
+  if (!body) return {success:false, error:'body is undefined'};
+  var sh = getSpreadsheet().getSheetByName(SHEETS.settings);
+  if (!sh) return {success:false, error:'Settings sheet not found'};
+  if (sh.getLastRow() > 1) {
+    sh.getRange(2, 1, sh.getLastRow() - 1, 2).clearContent();
+  }
+  sh.getRange(2, 1, 5, 2).setValues([
+    ['kafala',      +body.kafala  || 250],
+    ['iqama3',      +body.iqama3  || 3550],
+    ['iqama6',      +body.iqama6  || 7100],
+    ['iqama12',     +body.iqama12 || 14200],
+    ['ramadanFree', (body.ramadanFree === false || body.ramadanFree === 'false') ? 'false' : 'true']
+  ]);
+  return {success:true};
+}
+
+// ─── Helpers ──────────────────────────────────────────────
+function fmtDate(val) {
+  if (!val) return '';
+  try {
+    var d = (val instanceof Date) ? val : new Date(val);
+    if (isNaN(d.getTime())) return '';
+    return Utilities.formatDate(d, 'Asia/Riyadh', 'yyyy-MM-dd');
+  } catch(e) { return ''; }
+}
+
+function safeDate(val) {
+  if (!val) return '';
+  try {
+    var d = (val instanceof Date) ? val : new Date(String(val));
+    return isNaN(d.getTime()) ? '' : d;
+  } catch(e) { return ''; }
+}
+
+// ─── Employees ────────────────────────────────────────────
+function getEmployeesRaw() {
+  var sh = getSpreadsheet().getSheetByName(SHEETS.employees);
+  if (!sh || sh.getLastRow() < 2) return [];
+  return sh.getRange(2, 1, sh.getLastRow() - 1, 12).getValues();
+}
+
+function getEmployees() {
+  var rows   = getEmployeesRaw();
+  var pays   = getPaymentsRaw();
+  var cfg    = getSettings();
+  var today  = new Date(); today.setHours(0,0,0,0);
+  var result = [];
+
+  for (var i = 0; i < rows.length; i++) {
+    var r = rows[i];
+    if (!r[0] || r[10] === 'archived') continue;
+
+    var expiry   = fmtDate(r[2]);
+    var daysLeft = null;
+    if (expiry) {
+      var expD = new Date(expiry + 'T00:00:00');
+      daysLeft = Math.ceil((expD - today) / 86400000);
+    }
+
+    var iqamaNo   = String(r[1]);
+    var totalPaid = 0;
+    for (var j = 0; j < pays.length; j++) {
+      if (pays[j].iqamaNo === iqamaNo) totalPaid += (+pays[j].amount || 0);
+    }
+
+    var kafala    = +cfg.kafala || 250;
+    var iqamaCost = +r[5] > 0 ? +r[5] : (+cfg.iqama12 || 14200);
+    var months    = +r[7] || 0;
+    var totalDue  = iqamaCost + (kafala * months);
+
+    result.push({
+      name        : r[0],
+      iqamaNo     : iqamaNo,
+      iqamaExpiry : expiry,
+      mobile      : r[3] || '',
+      branch      : r[4] || '',
+      iqamaCost   : iqamaCost,
+      monthlyFee  : kafala,
+      months      : months,
+      totalDue    : totalDue,
+      totalPaid   : totalPaid,
+      balance     : totalPaid - totalDue,
+      daysLeft    : daysLeft,
+      notes       : r[9] || '',
+      status      : r[10] || 'active'
+    });
+  }
+  return {employees: result};
+}
+
+function addEmployee(body) {
+  if (!body) return {success:false, error:'body is undefined'};
+  var sh = getSpreadsheet().getSheetByName(SHEETS.employees);
+  if (!sh) return {success:false, error:'Employees sheet not found'};
+  // تحقق من تكرار رقم الإقامة
+  if (sh.getLastRow() >= 2) {
+    var existing = sh.getRange(2, 2, sh.getLastRow() - 1, 1).getValues();
+    for (var i = 0; i < existing.length; i++) {
+      if (String(existing[i][0]) === String(body.iqamaNo)) {
+        return {success:false, error:'رقم الإقامة موجود مسبقاً'};
+      }
+    }
+  }
+  var cfg = getSettings();
+  sh.appendRow([
+    String(body.name    || ''),
+    String(body.iqamaNo || ''),
+    safeDate(body.iqamaExpiry),
+    String(body.mobile  || ''),
+    String(body.branch  || ''),
+    +body.iqamaCost  > 0 ? +body.iqamaCost  : (+cfg.iqama12 || 14200),
+    +body.monthlyFee > 0 ? +body.monthlyFee : (+cfg.kafala  || 250),
+    +body.months || 0,
+    0,
+    String(body.notes || ''),
+    'active',
+    new Date()
+  ]);
+  return {success:true};
+}
+
+function updateEmployee(body) {
+  if (!body) return {success:false, error:'body is undefined'};
+  var sh = getSpreadsheet().getSheetByName(SHEETS.employees);
+  if (!sh || sh.getLastRow() < 2) return {success:false, error:'No data'};
+  var rows = sh.getRange(2, 1, sh.getLastRow() - 1, 12).getValues();
+  for (var i = 0; i < rows.length; i++) {
+    if (String(rows[i][1]) === String(body.iqamaNo)) {
+      var row = i + 2;
+      if (body.iqamaExpiry) sh.getRange(row, 3).setValue(safeDate(body.iqamaExpiry));
+      if (body.mobile  !== undefined) sh.getRange(row, 4).setValue(body.mobile);
+      if (body.branch  !== undefined) sh.getRange(row, 5).setValue(body.branch);
+      if (body.notes   !== undefined) sh.getRange(row, 10).setValue(body.notes);
+      return {success:true};
+    }
+  }
+  return {success:false, error:'Employee not found'};
+}
+
+// ─── Payments ─────────────────────────────────────────────
+function getPaymentsRaw() {
+  var sh = getSpreadsheet().getSheetByName(SHEETS.payments);
+  if (!sh || sh.getLastRow() < 2) return [];
+  var rows = sh.getRange(2, 1, sh.getLastRow() - 1, 9).getValues();
+  var result = [];
+  for (var i = 0; i < rows.length; i++) {
+    var r = rows[i];
+    if (!r[0]) continue;
+    result.push({
+      name       : r[0],
+      iqamaNo    : String(r[1]),
+      branch     : r[2] || '',
+      date       : fmtDate(r[3]),
+      amount     : +r[4] || 0,
+      type       : r[5] || '',
+      notes      : r[6] || '',
+      hijriMonth : r[7] || '',
+      hijriYear  : r[8] || ''
+    });
+  }
+  return result;
+}
+
+function getPayments() {
+  return {payments: getPaymentsRaw()};
+}
+
+function addPayment(body) {
+  if (!body) return {success:false, error:'body is undefined'};
+  var sh = getSpreadsheet().getSheetByName(SHEETS.payments);
+  if (!sh) return {success:false, error:'Payments sheet not found'};
+  sh.appendRow([
+    String(body.name       || ''),
+    String(body.iqamaNo    || ''),
+    String(body.branch     || ''),
+    new Date(),
+    +body.amount || 0,
+    String(body.type       || ''),
+    String(body.notes      || ''),
+    String(body.hijriMonth || ''),
+    String(body.hijriYear  || '')
+  ]);
+  return {success:true};
+}
+
+// ─── Archive ──────────────────────────────────────────────
+function getArchive() {
+  var sh = getSpreadsheet().getSheetByName(SHEETS.archive);
+  if (!sh || sh.getLastRow() < 2) return {archive:[]};
+  var rows = sh.getRange(2, 1, sh.getLastRow() - 1, 10).getValues();
+  var result = [];
+  for (var i = 0; i < rows.length; i++) {
+    var r = rows[i];
+    if (!r[0]) continue;
+    result.push({
+      name        : r[0],
+      iqamaNo     : String(r[1]),
+      branch      : r[2] || '',
+      status      : r[3] || '',
+      totalPaid   : +r[4] || 0,
+      balance     : +r[5] || 0,
+      reason      : r[6] || '',
+      archiveDate : fmtDate(r[7]),
+      mobile      : r[8] || '',
+      notes       : r[9] || ''
+    });
+  }
+  return {archive: result};
+}
+
+function archiveEmployee(body) {
+  if (!body) return {success:false, error:'body is undefined'};
+  var empSh = getSpreadsheet().getSheetByName(SHEETS.employees);
+  var arcSh = getSpreadsheet().getSheetByName(SHEETS.archive);
+  if (!empSh || !arcSh) return {success:false, error:'Sheet not found'};
+  if (empSh.getLastRow() < 2) return {success:false, error:'Employee not found'};
+  var rows = empSh.getRange(2, 1, empSh.getLastRow() - 1, 12).getValues();
+  var pays = getPaymentsRaw();
+  for (var i = 0; i < rows.length; i++) {
+    var r = rows[i];
+    if (String(r[1]) !== String(body.iqamaNo)) continue;
+    var totalPaid = 0;
+    for (var j = 0; j < pays.length; j++) {
+      if (pays[j].iqamaNo === String(r[1])) totalPaid += (+pays[j].amount || 0);
+    }
+    arcSh.appendRow([
+      r[0], String(r[1]), r[4], 'archived',
+      totalPaid, totalPaid,
+      body.reason || '', new Date(), r[3], r[9]
+    ]);
+    empSh.getRange(i + 2, 11).setValue('archived');
+    return {success:true};
+  }
+  return {success:false, error:'Employee not found'};
+}
+
+// ─── Alerts ───────────────────────────────────────────────
+function getAlerts() {
+  var emps = getEmployees().employees;
+  var iqamaAlerts = [], debtAlerts = [];
+  for (var i = 0; i < emps.length; i++) {
+    var e = emps[i];
+    if (e.daysLeft !== null && e.daysLeft <= 90 && e.daysLeft >= 0) iqamaAlerts.push(e);
+    if (e.balance < 0) debtAlerts.push(e);
+  }
+  iqamaAlerts.sort(function(a,b){ return a.daysLeft - b.daysLeft; });
+  debtAlerts.sort(function(a,b){ return a.balance - b.balance; });
+  return {iqamaAlerts: iqamaAlerts, debtAlerts: debtAlerts};
+}
+
+// ─── Dashboard ────────────────────────────────────────────
+function getDashboard() {
+  var emps   = getEmployees().employees;
+  var active = emps.filter(function(e){ return e.status === 'active'; });
+  var exp30 = 0, exp60 = 0, debt = 0, totalPaid = 0, totalBal = 0;
+  var branchMap = {};
+  for (var i = 0; i < active.length; i++) {
+    var e = active[i];
+    if (e.daysLeft !== null && e.daysLeft >= 0 && e.daysLeft <= 30) exp30++;
+    if (e.daysLeft !== null && e.daysLeft > 30  && e.daysLeft <= 60) exp60++;
+    if (e.balance < 0) debt++;
+    totalPaid += e.totalPaid || 0;
+    totalBal  += e.balance   || 0;
+    var b = e.branch || 'غير محدد';
+    if (!branchMap[b]) branchMap[b] = {branch:b, active:0, exp30:0, debt:0, bal:0};
+    branchMap[b].active++;
+    if (e.daysLeft !== null && e.daysLeft >= 0 && e.daysLeft <= 30) branchMap[b].exp30++;
+    if (e.balance < 0) branchMap[b].debt++;
+    branchMap[b].bal += e.balance;
+  }
+  var branches = Object.keys(branchMap).map(function(k){ return branchMap[k]; });
+  return {
+    active      : active.length,
+    exp30       : exp30,
+    exp60       : exp60,
+    debt        : debt,
+    archived    : getArchive().archive.length,
+    totalPaid   : totalPaid,
+    totalBalance: totalBal,
+    branches    : branches
+  };
+}
+
+// ─── Menu ─────────────────────────────────────────────────
+function onOpen() {
+  SpreadsheetApp.getUi()
+    .createMenu('نظام العمالة API')
+    .addItem('تجهيز الشيتات', 'setupSheets')
+    .addItem('اختبار الاتصال', 'testConnection')
+    .addToUi();
+}
+
+// ─── Test ──────────────────────────────────────────────────
+function testConnection() {
+  var result = getDashboard();
+  SpreadsheetApp.getUi().alert('الاتصال يعمل!\nالنشطون: ' + result.active + '\nالارشيف: ' + result.archived);
+}
+</pre>
+            </div>
+          </div><!-- /card-b -->
+        </div><!-- /card -->
+      </section><!-- /page-script -->
 
     </div><!-- /wrap -->
   </main>
@@ -949,7 +1415,9 @@ tbody td{padding:10px 10px;text-align:center;vertical-align:middle}
   </div>
 </div>
 
-<div class="toast" id="toast"<script>
+<div class="toast" id="toast"></div>
+
+<script>
 // ════════════════════════════════════════════════════════════════
 //   نظام إدارة العمالة — الإصدار النهائي 2026
 //   تم إعداده بواسطة Shady Nassef
@@ -963,7 +1431,7 @@ const COMPANY_KEY     = 'proplus_company';
 const LOGO_KEY        = 'proplus_logo';
 
 // ─── STATE ───
-
+let API = localStorage.getItem('labor_api_url') || '';
 let currentUser = null;
 let state = { employees:[], payments:[], archive:[], dashboard:null, alerts:null };
 let stmtEmp=null, payEmp=null, arcEmp=null;
@@ -1336,6 +1804,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
 // ─── LOAD ───
 async function loadAll(){
+  if(!API){ toast('أدخل رابط API في الإعدادات', 'err'); return; }
   toast('جاري التحميل...');
   try{
     const [d,al,em,py,ar] = await Promise.all([
@@ -1702,12 +2171,20 @@ async function savePricingSettings(){
     ramadanFree: document.getElementById('ramadanFree').checked
   };
   localStorage.setItem(PRICING_KEY, JSON.stringify(p));
-  try{
-    await apiPost({ action:'saveSettings', kafala:p.kafala,
-      iqama3:p.iqama3, iqama6:p.iqama6, iqama12:p.iqama12,
-      ramadanFree:p.ramadanFree });
-  }catch(e){}
-  toast('تم حفظ المبالغ ✅', 'ok');
+  // Sync to Google Sheets Settings sheet
+  if(API){
+    try{
+      await apiPost({
+        action:'saveSettings',
+        kafala: p.kafala,
+        iqama3: p.iqama3,
+        iqama6: p.iqama6,
+        iqama12: p.iqama12,
+        ramadanFree: p.ramadanFree
+      });
+    }catch(e){}
+  }
+  toast('تم حفظ المبالغ وتزامنها مع Google Sheets ✓', 'ok');
 }
 async function loadPricingSettings(){
   // First load from localStorage (instant)
@@ -1719,7 +2196,29 @@ async function loadPricingSettings(){
     document.getElementById('priceIqama12').value = p.iqama12 || 14200;
     document.getElementById('ramadanFree').checked = p.ramadanFree !== false;
   }
- 
+  // Then sync from Google Sheets Settings sheet
+  if(API){
+    try{
+      const res = await api('getSettings');
+      if(res && res.kafala){
+        const synced = {
+          kafala: +res.kafala || 250,
+          iqama3: +res.iqama3 || 3550,
+          iqama6: +res.iqama6 || 7100,
+          iqama12: +res.iqama12 || 14200,
+          ramadanFree: res.ramadanFree !== false && res.ramadanFree !== 'false'
+        };
+        localStorage.setItem(PRICING_KEY, JSON.stringify(synced));
+        if(document.getElementById('priceKafala')){
+          document.getElementById('priceKafala').value = synced.kafala;
+          document.getElementById('priceIqama3').value = synced.iqama3;
+          document.getElementById('priceIqama6').value = synced.iqama6;
+          document.getElementById('priceIqama12').value = synced.iqama12;
+          document.getElementById('ramadanFree').checked = synced.ramadanFree;
+        }
+      }
+    }catch(e){}
+  }
 }
 
 // ─── PAY TAB ───
@@ -2048,8 +2547,13 @@ function delUser(i){
 }
 
 // ─── SETTINGS API SAVE ───
-document.getElementById('saveApiBtn')?.addEventListener('click', () => {
-  toast('النظام يعمل على Firebase ✅ — لا يحتاج رابط API', 'ok');
+document.getElementById('saveApiBtn').addEventListener('click', async () => {
+  const url = document.getElementById('apiUrl').value.trim();
+  if(!url){ toast('أدخل رابط API', 'err'); return; }
+  API = url; localStorage.setItem(API_KEY, url);
+  const d = await api('getDashboard');
+  if(d){ document.getElementById('connMsg').textContent = '✅ الاتصال يعمل! النشطون: '+(d.active||0); loadAll(); }
+  else document.getElementById('connMsg').textContent = '❌ فشل الاتصال — تحقق من الرابط والصلاحيات';
 });
 
 // ─── PDF EXPORT — دعم عربي ───
