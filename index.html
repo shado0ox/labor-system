@@ -1628,67 +1628,169 @@ function filterPaymentsByRole(list){
   return list;
 }
 
-// ─── API ───
-async function api(action){
-  if(!API) return null;
-  try{
-    const r = await fetch(API + '?action=' + encodeURIComponent(action));
-    return await r.json();
-  }catch(e){ toast('خطأ في الاتصال', 'err'); return null; }
+// ══ Firebase — بدل Google Apps Script ══════════════════════
+
+async function _getSettings() {
+  try {
+    const doc = await db.collection('settings').doc('config').get();
+    if(doc.exists) return doc.data();
+  } catch(e){}
+  return { kafala:250, iqama3:3550, iqama6:7100, iqama12:14200, ramadanFree:true };
 }
-async function apiPost(body){
-  if(!API){ toast('لم يتم ضبط رابط API في الإعدادات', 'err'); return null; }
-  try{
-    console.log('📤 apiPost action:', body.action, '| URL:', API);
-    const r = await fetch(API, {
-      method:'POST',
-      headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body: JSON.stringify(body),
-      redirect:'follow'
-    });
-    console.log('📥 HTTP Status:', r.status, r.statusText);
-    const txt = await r.text();
-    console.log('📥 Raw response:', txt.substring(0,300));
-    try{ 
-      const json = JSON.parse(txt);
-      console.log('✅ Parsed JSON:', json);
-      return json;
-    }catch(e2){ 
-      console.error('❌ JSON parse failed. Raw:', txt);
-      toast('استجابة غير صالحة من السيرفر', 'err');
-      return null;
+
+async function api(action) {
+  return await apiPost({ action });
+}
+
+async function apiPost(body) {
+  try {
+    const action = body.action;
+
+    if (action === 'getEmployees') {
+      const [eSnap, pSnap] = await Promise.all([
+        db.collection('employees').where('status','==','active').get(),
+        db.collection('payments').get()
+      ]);
+      const payments = pSnap.docs.map(d => d.data());
+      const cfg = await _getSettings();
+      const today = new Date(); today.setHours(0,0,0,0);
+      const employees = eSnap.docs.map(d => {
+        const e = d.data();
+        const tp = payments.filter(p=>p.iqamaNo===e.iqamaNo).reduce((s,p)=>s+(p.amount||0),0);
+        const due = (e.iqamaCost||cfg.iqama12||14200) + (e.monthlyFee||cfg.kafala||250)*(e.months||0);
+        const dl = e.iqamaExpiry ? Math.ceil((new Date(e.iqamaExpiry+'T00:00:00')-today)/86400000) : null;
+        return { ...e, totalDue:due, totalPaid:tp, balance:tp-due, daysLeft:dl };
+      });
+      return { employees };
     }
-  }catch(e){
-    console.error('❌ Fetch error:', e.message, e);
-    toast('خطأ في الاتصال: ' + e.message, 'err');
+
+    if (action === 'addEmployee') {
+      const exists = await db.collection('employees').doc(body.iqamaNo).get();
+      if (exists.exists) return { success:false, error:'رقم الإقامة موجود مسبقاً' };
+      await db.collection('employees').doc(body.iqamaNo).set({
+        ...body, status:'active', addedDate: new Date().toISOString()
+      });
+      return { success:true };
+    }
+
+    if (action === 'updateEmployee') {
+      await db.collection('employees').doc(body.iqamaNo).update(body);
+      return { success:true };
+    }
+
+    if (action === 'archiveEmployee') {
+      const pSnap = await db.collection('payments').where('iqamaNo','==',body.iqamaNo).get();
+      const totalPaid = pSnap.docs.reduce((s,d)=>s+(d.data().amount||0),0);
+      await db.collection('employees').doc(body.iqamaNo).update({
+        status:'archived',
+        archiveReason: body.archiveReason||'',
+        archiveDate: new Date().toISOString(),
+        totalPaid, balance: totalPaid
+      });
+      return { success:true };
+    }
+
+    if (action === 'addPayment') {
+      await db.collection('payments').add({
+        ...body, date: new Date().toISOString().split('T')[0]
+      });
+      return { success:true };
+    }
+
+    if (action === 'getPayments') {
+      const snap = await db.collection('payments').orderBy('date','desc').get();
+      return { payments: snap.docs.map(d => d.data()) };
+    }
+
+    if (action === 'addIqamaRenewal') {
+      await db.collection('iqamaRenewals').add({
+        ...body, renewDate: new Date().toISOString()
+      });
+      return { success:true };
+    }
+
+    if (action === 'addKafalaOrder') {
+      await db.collection('kafalaOrders').add({
+        ...body, orderDate: new Date().toISOString()
+      });
+      return { success:true };
+    }
+
+    if (action === 'updateIqamaExpiry') {
+      await db.collection('employees').doc(body.iqamaNo).update({
+        iqamaExpiry: body.newExpiry
+      });
+      return { success:true };
+    }
+
+    if (action === 'getSettings') {
+      return await _getSettings();
+    }
+
+    if (action === 'saveSettings') {
+      await db.collection('settings').doc('config').set(body);
+      return { success:true };
+    }
+
+    if (action === 'getArchive') {
+      const snap = await db.collection('employees').where('status','==','archived').get();
+      return { archive: snap.docs.map(d => d.data()) };
+    }
+
+    if (action === 'getDashboard') {
+      const [empSnap, arcSnap, paySnap] = await Promise.all([
+        db.collection('employees').where('status','==','active').get(),
+        db.collection('employees').where('status','==','archived').get(),
+        db.collection('payments').get()
+      ]);
+      const employees = empSnap.docs.map(d => d.data());
+      const payments  = paySnap.docs.map(d => d.data());
+      const cfg = await _getSettings();
+      const today = new Date(); today.setHours(0,0,0,0);
+      let exp30=0, exp60=0, debt=0, totalPaid=0, totalBal=0;
+      const branchMap = {};
+      employees.forEach(e => {
+        const tp  = payments.filter(p=>p.iqamaNo===e.iqamaNo).reduce((s,p)=>s+(p.amount||0),0);
+        const due = (e.iqamaCost||cfg.iqama12||14200) + (e.monthlyFee||cfg.kafala||250)*(e.months||0);
+        const bal = tp - due;
+        const dl  = e.iqamaExpiry ? Math.ceil((new Date(e.iqamaExpiry+'T00:00:00')-today)/86400000) : null;
+        totalPaid += tp; totalBal += bal;
+        if(dl!==null&&dl>=0&&dl<=30) exp30++;
+        if(dl!==null&&dl>30&&dl<=60) exp60++;
+        if(bal<0) debt++;
+        const b = e.branch||'';
+        if(!branchMap[b]) branchMap[b]={branch:b,active:0,exp30:0,debt:0,bal:0};
+        branchMap[b].active++;
+        if(dl!==null&&dl>=0&&dl<=30) branchMap[b].exp30++;
+        if(bal<0) branchMap[b].debt++;
+        branchMap[b].bal += bal;
+      });
+      return {
+        active:employees.length, archived:arcSnap.size,
+        exp30, exp60, debt, totalPaid, totalBalance:totalBal,
+        branches: Object.values(branchMap)
+      };
+    }
+
+    if (action === 'getAlerts') {
+      const res = await apiPost({action:'getEmployees'});
+      const emps = res.employees || [];
+      const iqamaAlerts = emps.filter(e=>e.daysLeft!==null&&e.daysLeft<=90&&e.daysLeft>=0)
+                              .sort((a,b)=>a.daysLeft-b.daysLeft);
+      const debtAlerts  = emps.filter(e=>e.balance<0)
+                              .sort((a,b)=>a.balance-b.balance);
+      return { iqamaAlerts, debtAlerts };
+    }
+
+  } catch(err) {
+    console.error('Firebase error:', err);
+    toast('خطأ: ' + err.message, 'err');
     return null;
   }
 }
-function loadApiFromSettings(){
-  const saved = localStorage.getItem('labor_api_url') || '';
-  API = saved;
-}
 
-function saveApiFromSettings(){
-  const input = document.getElementById('apiUrl');
-  if(!input) { 
-    toast('حقل رابط API غير موجود في الصفحة', 'err'); 
-    return; 
-  }
-  const url = input.value.trim();
-  if(!url){
-    toast('من فضلك أدخل رابط Web App أولاً', 'err');
-    return;
-  }
-  if(!url.startsWith('https://script.google.com/')){
-    toast('يبدو أن الرابط المدخل ليس رابط Web App من Apps Script', 'warn');
-  }
-  localStorage.setItem('labor_api_url', url);
-  localStorage.setItem(API_KEY, url);
-  API = url;
-  toast('تم حفظ رابط Google Sheets بنجاح ✅', 'ok');
-}
-
+function loadApiFromSettings(){ /* Firebase لا يحتاج API URL */ }
+function saveApiFromSettings(){ toast('النظام يعمل على Firebase ✅', 'ok'); }
 // عند تحميل الصفحة
 window.addEventListener('DOMContentLoaded', () => {
   loadApiFromSettings();
