@@ -1552,30 +1552,34 @@ function clearLogo(){
 }
 
 // ─── LOGIN ───
-function doLogin(){
+async function doLogin(){
   const u = document.getElementById('loginUser').value.trim();
   const p = document.getElementById('loginPass').value.trim();
-  const found = getUsers().find(x => x.user===u && x.pass===p);
-  if(!found){
-    document.getElementById('loginErr').textContent = 'اسم المستخدم أو كلمة المرور غير صحيحة';
-    return;
+  document.getElementById('loginErr').textContent = '';
+  try {
+    await auth.signInWithEmailAndPassword(u, p);
+    const fbUser = auth.currentUser;
+    // استخدم بيانات المستخدم المحلية للصلاحيات
+    const found = getUsers().find(x => x.user === u) || 
+                  { name: fbUser.email, user: u, role:'admin', branch:'' };
+    currentUser = found;
+    document.getElementById('loginScreen').classList.add('hidden');
+    document.getElementById('app').classList.add('show');
+    document.getElementById('sbUserName').textContent = found.name;
+    const roleLabels = {admin:'مدير',viewer:'مشاهد',branch:'فرع '+found.branch};
+    document.getElementById('sbUserRole').textContent = roleLabels[found.role]||found.role;
+    document.body.className = 'role-' + found.role;
+    loadCompanySettings();
+    loadPricingSettings();
+    renderBranchList();
+    renderUsersTable();
+    logActivity('login', 'تسجيل دخول: ' + found.name + ' | ' + found.role);
+    renderActivityLog();
+    loadAll();
+    document.querySelectorAll('.nav-btn').forEach(b=>b.addEventListener('click', ()=>goto(b.dataset.page)));
+  } catch(err) {
+    document.getElementById('loginErr').textContent = 'البريد الإلكتروني أو كلمة المرور غلط';
   }
-  currentUser = found;
-  document.getElementById('loginScreen').classList.add('hidden');
-  document.getElementById('app').classList.add('show');
-  document.getElementById('sbUserName').textContent = found.name;
-  const roleLabels = {admin:'مدير',viewer:'مشاهد',branch:'فرع '+found.branch};
-  document.getElementById('sbUserRole').textContent = roleLabels[found.role] || found.role;
-  document.body.className = 'role-' + found.role;
-  API = localStorage.getItem(API_KEY) || '';
-  if(API) document.getElementById('apiUrl').value = API;
-  renderUsersTable();
-  loadCompanySettings();
-  loadPricingSettings();
-  renderBranchList();
-  logActivity('login', 'تسجيل دخول: ' + found.name + ' (' + found.role + ')');
-  renderActivityLog();
-  if(API) loadAll(); else toast('أدخل رابط API في الإعدادات', 'warn');
 }
 function doLogout(){
   logActivity('login', 'تسجيل خروج: ' + (currentUser?.name||''));
