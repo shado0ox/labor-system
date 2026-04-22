@@ -805,7 +805,7 @@ tbody td{padding:10px 10px;text-align:center;vertical-align:middle}
     <div class="modal-b">
       <div class="form-grid">
         <div class="fld"><label>الاسم الكامل</label><input id="uName"/></div>
-        <div class="fld"><label>اسم المستخدم</label><input id="uUser"/></div>
+        <div class="fld"><label>البريد الإلكتروني</label><input id="uUser" type="email" placeholder="example@email.com"/></div>
         <div class="fld"><label>كلمة المرور</label><input id="uPass" type="password"/></div>
         <div class="fld"><label>الصلاحية</label>
           <select id="uRole">
@@ -1001,7 +1001,6 @@ tbody td{padding:10px 10px;text-align:center;vertical-align:middle}
 // ════════════════════════════════════════════════════════════════
 
 // ─── CONSTANTS ───
-const USERS_KEY       = 'proplus_users';
 const API_KEY         = 'proplus_api';
 const ACTIVITY_KEY    = 'proplus_activity';
 const COMPANY_KEY     = 'proplus_company';
@@ -1013,18 +1012,7 @@ let state = { employees:[], payments:[], archive:[], dashboard:null, alerts:null
 let stmtEmp=null, payEmp=null, arcEmp=null;
 let branchChart=null, statusChart=null;
 
-// ─── USERS ───
-function getUsers(){
-  const raw = localStorage.getItem(USERS_KEY);
-  if(raw) return JSON.parse(raw);
-  const def = [
-    {name:'المدير',user:'admin',pass:'1234',role:'admin',branch:''},
-    {name:'مشاهد',user:'viewer',pass:'1234',role:'viewer',branch:''}
-  ];
-  localStorage.setItem(USERS_KEY, JSON.stringify(def));
-  return def;
-}
-function saveUsers(u){ localStorage.setItem(USERS_KEY, JSON.stringify(u)); }
+// ─── USERS (Firebase) ───
 
 // ─── ACTIVITY LOG ───
 function getActivity(){ try{ return JSON.parse(localStorage.getItem(ACTIVITY_KEY)||'[]'); }catch(e){ return []; } }
@@ -2113,38 +2101,68 @@ function hMonthDays(hy, hm){
 }
 
 // ─── USERS PAGE ───
-function renderUsersTable(){
-  const users = getUsers();
-  document.getElementById('usersBody').innerHTML = users.map((u,i) =>
-    `<tr>
-      <td>${i+1}</td><td>${u.name}</td><td><strong>${u.user}</strong></td>
-      <td><span class="badge ${u.role==='admin'?'b-blue':u.role==='branch'?'b-green':'b-gray'}">${u.role}</span></td>
-      <td>${u.branch||'كل الفروع'}</td>
-      <td>${u.user!=='admin'?`<button class="btn btn-red btn-sm" onclick="delUser(${i})">حذف</button>`:'-'}</td>
-    </tr>`
-  ).join('');
+async function renderUsersTable(){
+  const body = document.getElementById('usersBody');
+  if(!body) return;
+  try {
+    const snap = await db.collection('userProfiles').orderBy('createdAt','desc').get();
+    if(snap.empty){
+      body.innerHTML = `<tr><td colspan="6" style="padding:20px;color:var(--muted);text-align:center">لا يوجد مستخدمون مسجلون</td></tr>`;
+      return;
+    }
+    body.innerHTML = snap.docs.map((d,i) => {
+      const u = d.data();
+      const isCurrent = currentUser && currentUser.uid === d.id;
+      return `<tr>
+        <td>${i+1}</td>
+        <td>${u.name}</td>
+        <td><strong>${u.email}</strong></td>
+        <td><span class="badge ${u.role==='admin'?'b-blue':u.role==='branch'?'b-green':'b-gray'}">${u.role}</span></td>
+        <td>${u.branch||'كل الفروع'}</td>
+        <td>${isCurrent ? '-' : `<button class="btn btn-red btn-sm" onclick="delUserFirebase('${d.id}','${u.name}')">حذف</button>`}</td>
+      </tr>`;
+    }).join('');
+  } catch(e){
+    body.innerHTML = `<tr><td colspan="6" style="color:var(--red2);text-align:center;padding:16px">خطأ في تحميل المستخدمين</td></tr>`;
+  }
 }
-function addUser(){
-  const name = document.getElementById('uName').value.trim();
-  const user = document.getElementById('uUser').value.trim();
-  const pass = document.getElementById('uPass').value.trim();
-  if(!name||!user||!pass){ toast('أكمل الحقول المطلوبة', 'err'); return; }
-  const users = getUsers();
-  if(users.find(u => u.user===user)){ toast('اسم المستخدم موجود بالفعل', 'err'); return; }
-  users.push({name, user, pass, role:document.getElementById('uRole').value, branch:document.getElementById('uBranch').value});
-  saveUsers(users);
-  closeModal('addUserModal');
-  renderUsersTable();
-  toast('تم إضافة المستخدم', 'ok');
-  logActivity('add', `إضافة مستخدم جديد: ${name} (${user})`);
+async function addUser(){
+  const name   = document.getElementById('uName').value.trim();
+  const email  = document.getElementById('uUser').value.trim();
+  const pass   = document.getElementById('uPass').value.trim();
+  const role   = document.getElementById('uRole').value;
+  const branch = document.getElementById('uBranch').value;
+  if(!name||!email||!pass){ toast('أكمل الحقول المطلوبة', 'err'); return; }
+  try {
+    const cred = await auth.createUserWithEmailAndPassword(email, pass);
+    const uid  = cred.user.uid;
+    await db.collection('userProfiles').doc(uid).set({
+      uid, name, email, role, branch,
+      createdAt: new Date().toISOString()
+    });
+    closeModal('addUserModal');
+    renderUsersTable();
+    toast('تم إضافة المستخدم ✅', 'ok');
+    logActivity('add', `إضافة مستخدم جديد: ${name} (${email})`);
+  } catch(e){
+    const msgs = {
+      'auth/email-already-in-use': 'البريد الإلكتروني مستخدم بالفعل',
+      'auth/weak-password': 'كلمة المرور ضعيفة (8 أحرف على الأقل)',
+      'auth/invalid-email': 'صيغة البريد الإلكتروني غلط'
+    };
+    toast(msgs[e.code] || e.message, 'err');
+  }
 }
-function delUser(i){
-  const u = getUsers();
-  if(u[i].user===currentUser.user){ toast('لا يمكن حذف المستخدم الحالي', 'err'); return; }
-  if(u[i].user==='admin'){ toast('لا يمكن حذف المدير الرئيسي', 'err'); return; }
-  if(!confirm('هل تريد حذف المستخدم '+u[i].name+'؟')) return;
-  logActivity('del', `حذف مستخدم: ${u[i].name}`);
-  u.splice(i,1); saveUsers(u); renderUsersTable();
+async function delUserFirebase(uid, name){
+  if(!confirm('هل تريد حذف المستخدم '+name+'؟')) return;
+  try {
+    await db.collection('userProfiles').doc(uid).delete();
+    toast('تم حذف المستخدم', 'ok');
+    logActivity('del', `حذف مستخدم: ${name}`);
+    renderUsersTable();
+  } catch(e){
+    toast('خطأ في الحذف: ' + e.message, 'err');
+  }
 }
 
 // ─── SETTINGS API SAVE ───
