@@ -8,6 +8,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
 <style>
 :root{
   --bg:#f0f4fa;--surf:#fff;--surf2:#eef4fb;--text:#17212f;--muted:#667085;--border:#d7e0ea;
@@ -77,6 +78,7 @@ a{text-decoration:none;color:inherit}button,input,select,textarea{font:inherit;o
 .btn-ghost{background:#fff;border:1.5px solid var(--border);color:var(--text)}.btn-ghost:hover{background:var(--surf2)}
 .btn-wa{background:#25D366;color:#fff}.btn-wa:hover{background:#128C7E}
 .btn-pdf{background:#e74c3c;color:#fff}.btn-pdf:hover{background:#c0392b}
+.btn-excel{background:#217346;color:#fff}.btn-excel:hover{background:#1a5c38}
 .btn-gray{background:var(--gray);color:#fff}.btn-gray:hover{background:var(--gray2)}
 .btn-sm{padding:6px 12px;font-size:12px}
 
@@ -368,6 +370,7 @@ tbody td{padding:10px 10px;text-align:center;vertical-align:middle}
       <div class="tb-actions">
         <button class="btn btn-primary admin-only" id="addEmpBtn">+ إضافة موظف</button>
         <button class="btn btn-pdf" onclick="exportCurrentPage()">📄 تصدير PDF</button>
+        <button class="btn btn-excel" onclick="exportCurrentPageExcel()">📊 تصدير Excel</button>
         <button class="btn btn-ghost" onclick="loadAll()">🔄 تحديث</button>
       </div>
     </header>
@@ -409,7 +412,8 @@ tbody td{padding:10px 10px;text-align:center;vertical-align:middle}
         <div class="card">
           <div class="card-h"><h3>👷 الموظفون النشطون</h3>
             <div style="display:flex;gap:8px">
-              <button class="btn btn-ghost btn-sm" onclick="exportTablePDF('empTable','الموظفون')">📄 PDF</button>
+              <button class="btn btn-excel btn-sm" onclick="exportTableExcel('empTable','الموظفون')">📊 Excel</button>
+<button class="btn btn-ghost btn-sm" onclick="exportTablePDF('empTable','الموظفون')">📄 PDF</button>
             </div>
           </div>
           <div class="card-b">
@@ -430,14 +434,16 @@ tbody td{padding:10px 10px;text-align:center;vertical-align:middle}
       <!-- ALERTS -->
       <section class="page" id="page-alerts">
         <div class="card" style="margin-bottom:20px">
-          <div class="card-h" style="background:var(--red2)"><h3>🔴 إقامات تنتهي قريبًا</h3><button class="btn btn-ghost btn-sm" onclick="exportTablePDF('iqamaAlertTbl','تنبيهات الإقامة')">📄 PDF</button></div>
+          <div class="card-h" style="background:var(--red2)"><h3>🔴 إقامات تنتهي قريبًا</h3><button class="btn btn-excel btn-sm" onclick="exportTableExcel('iqamaAlertTbl','تنبيهات الإقامة')">📊 Excel</button>
+<button class="btn btn-ghost btn-sm" onclick="exportTablePDF('iqamaAlertTbl','تنبيهات الإقامة')">📄 PDF</button></div>
           <div class="card-b"><div class="table-wrap"><table id="iqamaAlertTbl">
             <thead><tr><th>#</th><th>الاسم</th><th>الفرع</th><th>الجوال</th><th>الانتهاء</th><th>هجري</th><th>أيام متبقية</th><th>المتبقي</th><th>واتساب</th></tr></thead>
             <tbody id="iqamaAlertBody"></tbody>
           </table></div></div>
         </div>
         <div class="card">
-          <div class="card-h" style="background:#92400e"><h3>🟡 عمالة عليها مبالغ</h3><button class="btn btn-ghost btn-sm" onclick="exportTablePDF('debtAlertTbl','تنبيهات المديونية')">📄 PDF</button></div>
+          <div class="card-h" style="background:#92400e"><h3>🟡 عمالة عليها مبالغ</h3><button class="btn btn-excel btn-sm" onclick="exportTableExcel('debtAlertTbl','تنبيهات المديونية')">📊 Excel</button>
+<button class="btn btn-ghost btn-sm" onclick="exportTablePDF('debtAlertTbl','تنبيهات المديونية')">📄 PDF</button></div>
           <div class="card-b"><div class="table-wrap"><table id="debtAlertTbl">
             <thead><tr><th>#</th><th>الاسم</th><th>الفرع</th><th>الجوال</th><th>المتبقي</th><th>الانتهاء هجري</th><th>واتساب</th></tr></thead>
             <tbody id="debtAlertBody"></tbody>
@@ -448,7 +454,8 @@ tbody td{padding:10px 10px;text-align:center;vertical-align:middle}
       <!-- PAYMENTS -->
       <section class="page" id="page-payments">
         <div class="card">
-          <div class="card-h"><h3>💰 سجل المدفوعات</h3><button class="btn btn-ghost btn-sm" onclick="exportTablePDF('payTable','المدفوعات')">📄 PDF</button></div>
+          <div class="card-h"><h3>💰 سجل المدفوعات</h3><button class="btn btn-excel btn-sm" onclick="exportTableExcel('payTable','المدفوعات')">📊 Excel</button>
+<button class="btn btn-ghost btn-sm" onclick="exportTablePDF('payTable','المدفوعات')">📄 PDF</button></div>
           <div class="card-b">
             <div class="filters">
               <input id="pSearch" placeholder="بحث باسم الموظف..." oninput="filterPay()"/>
@@ -467,7 +474,8 @@ tbody td{padding:10px 10px;text-align:center;vertical-align:middle}
       <!-- MONTHLY -->
       <section class="page" id="page-monthly">
         <div class="kpi-grid" id="monthKpis"></div>
-        <div class="card"><div class="card-h"><h3>📅 التقرير الشهري</h3><button class="btn btn-ghost btn-sm" onclick="exportTablePDF('monthlyTable','تقرير شهري')">📄 PDF</button></div>
+        <div class="card"><div class="card-h"><h3>📅 التقرير الشهري</h3><button class="btn btn-excel btn-sm" onclick="exportTableExcel('monthlyTable','تقرير شهري')">📊 Excel</button>
+<button class="btn btn-ghost btn-sm" onclick="exportTablePDF('monthlyTable','تقرير شهري')">📄 PDF</button></div>
         <div class="card-b"><div class="table-wrap"><table id="monthlyTable">
           <thead><tr><th>الشهر</th><th>عدد العمليات</th><th>إجمالي المدفوعات</th><th>متوسط العملية</th></tr></thead>
           <tbody id="monthlyBody"></tbody>
@@ -476,7 +484,8 @@ tbody td{padding:10px 10px;text-align:center;vertical-align:middle}
 
       <!-- ARCHIVE -->
       <section class="page admin-only" id="page-archive">
-        <div class="card"><div class="card-h" style="background:var(--gray)"><h3>📁 الأرشيف</h3><button class="btn btn-ghost btn-sm" onclick="exportTablePDF('arcTable','الأرشيف')">📄 PDF</button></div>
+        <div class="card"><div class="card-h" style="background:var(--gray)"><h3>📁 الأرشيف</h3><button class="btn btn-excel btn-sm" onclick="exportTableExcel('arcTable','الأرشيف')">📊 Excel</button>
+<button class="btn btn-ghost btn-sm" onclick="exportTablePDF('arcTable','الأرشيف')">📄 PDF</button></div>
         <div class="card-b"><div class="table-wrap"><table id="arcTable">
           <thead><tr><th>#</th><th>الاسم</th><th>رقم الإقامة</th><th>الفرع</th><th>الحالة</th><th>المدفوع</th><th>المتبقي</th><th>السبب</th><th>تاريخ الأرشفة</th><th>إجراءات</th></tr></thead>
           <tbody id="arcBody"></tbody>
@@ -686,8 +695,22 @@ tbody td{padding:10px 10px;text-align:center;vertical-align:middle}
 </div>
         <div class="fld full"><label>ملاحظات</label><textarea id="fNotes"></textarea></div>
       </div>
-      <div style="background:var(--p3);border-radius:10px;padding:11px 15px;margin-top:8px;font-size:13px;color:var(--p);display:flex;align-items:center;gap:8px">
-        💡 <span>تسجيل الدفعات يتم من زر <strong>دفعة</strong> في جدول الموظفين — الكفالة والإقامة محسوبة من <strong>إعدادات المبالغ</strong></span>
+      <div class="fld full">
+        <label>💳 رصيد الإقامة المستحق (ر.س)</label>
+        <input id="fIqamaBalance" type="number" min="0" placeholder="0" />
+        <div class="hijri-hint">المبلغ المطلوب كرصيد إقامة على الموظف</div>
+      </div>
+      <div class="fld">
+        <label>🔒 عدد الكفالات</label>
+        <input id="fKafalaCount" type="number" min="0" placeholder="0" />
+      </div>
+      <div class="fld">
+        <label>📋 مديونات أخرى (ر.س)</label>
+        <input id="fOtherDebt" type="number" min="0" placeholder="0" oninput="document.getElementById('fOtherDebtDescFld').style.display=this.value>0?'block':'none'" />
+      </div>
+      <div class="fld full" id="fOtherDebtDescFld" style="display:none">
+        <label>تفاصيل المديونات الأخرى</label>
+        <textarea id="fOtherDebtDesc" style="min-height:50px" placeholder="وصف المديونات الأخرى..."></textarea>
       </div>
     </div>
     <div class="modal-f"><button class="btn btn-ghost" onclick="closeModal('empModal')">إلغاء</button><button class="btn btn-primary" id="saveEmpBtn">حفظ الموظف</button></div>
@@ -746,8 +769,26 @@ tbody td{padding:10px 10px;text-align:center;vertical-align:middle}
             <button class="active" onclick="setIqamaRenew(12,this)" style="flex:1">سنة كاملة</button>
           </div>
         </div>
+        <div class="form-grid" style="margin-top:10px">
+          <div class="fld">
+            <label>من شهر</label>
+            <select id="pIqamaFromMonth">
+              <option value="">-- اختر --</option>
+              <option value="1">يناير</option><option value="2">فبراير</option>
+              <option value="3">مارس</option><option value="4">أبريل</option>
+              <option value="5">مايو</option><option value="6">يونيو</option>
+              <option value="7">يوليو</option><option value="8">أغسطس</option>
+              <option value="9">سبتمبر</option><option value="10">أكتوبر</option>
+              <option value="11">نوفمبر</option><option value="12">ديسمبر</option>
+            </select>
+          </div>
+          <div class="fld">
+            <label>السنة</label>
+            <select id="pIqamaFromYear"></select>
+          </div>
+        </div>
         <div class="fld" style="margin-top:12px">
-          <label>مبلغ التجديد (ريال)</label>
+          <label>مبلغ الإقامة (ريال)</label>
           <input id="pAmountIqama" type="number" style="font-weight:800;font-size:16px"/>
           <div style="font-size:12px;color:var(--muted);margin-top:4px">يمكنك تعديل المبلغ يدوياً</div>
         </div>
@@ -762,6 +803,10 @@ tbody td{padding:10px 10px;text-align:center;vertical-align:middle}
             </select>
           </div>
           <div class="fld"><label>المبلغ (ريال)</label><input id="pAmountOther" type="number"/></div>
+        </div>
+        <div class="fld" style="margin-top:10px">
+          <label>تفاصيل المديونات الأخرى</label>
+          <textarea id="pOtherDesc" style="min-height:50px" placeholder="اكتب تفاصيل العملية..."></textarea>
         </div>
       </div>
 
@@ -1317,7 +1362,7 @@ async function apiPost(body) {
       const employees = eSnap.docs.map(d => {
         const e = d.data();
         const tp = payments.filter(p=>p.iqamaNo===e.iqamaNo).reduce((s,p)=>s+(p.amount||0),0);
-        const due = (e.iqamaCost||cfg.iqama12||14200) + (e.monthlyFee||cfg.kafala||250)*(e.months||0);
+        const due = (e.iqamaBalance||0) + (e.kafalaCount||0)*(cfg.kafala||250) + (e.otherDebt||0);
         const dl = e.iqamaExpiry ? Math.ceil((new Date(e.iqamaExpiry+'T00:00:00')-today)/86400000) : null;
         return { ...e, totalDue:due, totalPaid:tp, balance:tp-due, daysLeft:dl };
       });
@@ -1397,7 +1442,7 @@ async function apiPost(body) {
       const branchMap = {};
       employees.forEach(e => {
         const tp  = payments.filter(p=>p.iqamaNo===e.iqamaNo).reduce((s,p)=>s+(p.amount||0),0);
-        const due = (e.iqamaCost||cfg.iqama12||14200) + (e.monthlyFee||cfg.kafala||250)*(e.months||0);
+        const due = (e.iqamaBalance||0) + (e.kafalaCount||0)*(cfg.kafala||250) + (e.otherDebt||0);
         const bal = tp - due;
         const dl  = e.iqamaExpiry ? Math.ceil((new Date(e.iqamaExpiry+'T00:00:00')-today)/86400000) : null;
         totalPaid += tp; totalBal += bal;
@@ -1869,6 +1914,18 @@ function openPayModal(e){
   setPayTab('kafala', document.querySelector('#payModal .tab-switch button'));
   // init year dropdown
   initPayHijriYear();
+  const _iySel = document.getElementById('pIqamaFromYear');
+  if(_iySel && _iySel.options.length<=1){
+    const _cy = new Date().getFullYear();
+    for(let y=_cy-2;y<=_cy+3;y++){
+      const o=document.createElement('option');
+      o.value=y; o.textContent=y;
+      if(y===_cy) o.selected=true;
+      _iySel.appendChild(o);
+    }
+  }
+  document.getElementById('pOtherDesc').value='';
+  document.getElementById('pIqamaFromMonth').value='';
   // set default hijri month to current
   const cur = g2hObj(new Date());
   if(cur) document.getElementById('pHijriMonth').value = cur.m;
@@ -1895,10 +1952,14 @@ document.getElementById('savePayBtn').addEventListener('click', async () => {
   } else if(currentPayTab==='iqama'){
     amount = +document.getElementById('pAmountIqama').value;
     if(!amount||amount<=0){ toast('أدخل مبلغ التجديد', 'err'); return; }
-    type = 'تجديد إقامة — ' + currentIqamaMonths + (currentIqamaMonths===12?' شهر (سنة)':' أشهر');
+    const _iqFM = document.getElementById('pIqamaFromMonth').value;
+    const _iqFY = document.getElementById('pIqamaFromYear').value;
+    type = 'تجديد إقامة — ' + currentIqamaMonths + (currentIqamaMonths===12?' شهر (سنة)':' أشهر') + (_iqFM&&_iqFY?' | من '+_iqFM+'/'+_iqFY:'');
   } else {
     amount = +document.getElementById('pAmountOther').value;
     type = document.getElementById('pTypeOther').value;
+    const _od = document.getElementById('pOtherDesc').value;
+    if(_od) notes = (notes ? notes+' — ' : '') + _od;
   }
   if(!amount && currentPayTab!=='kafala'){ toast('أدخل مبلغ صحيح', 'err'); return; }
   const res = await apiPost({
@@ -1936,6 +1997,7 @@ document.getElementById('confirmArcBtn').addEventListener('click', async () => {
 document.getElementById('addEmpBtn').addEventListener('click', () => {
   ['fName','fIqama','fExpGreg','fExpHijri','fMobile','fNotes'].forEach(id => document.getElementById(id).value='');
   document.getElementById('fBranchSel').value='';
+  document.getElementById('fOtherDebtDescFld').style.display='none';
   setDateTab('greg', document.querySelector('#empModal .tab-switch button'));
   populateBranchFilters();
   openModal('empModal');
@@ -1947,14 +2009,14 @@ document.getElementById('saveEmpBtn').addEventListener('click', async () => {
   const hijri = document.getElementById('fExpHijri').value;
   const expiry = greg || (hijri ? h2g(hijri) : '');
   if(!name||!iqama||!expiry){ toast('الحقول الإلزامية: الاسم، الإقامة، التاريخ', 'err'); return; }
-  const pr = getPricing();
   const payload = {
     action:'addEmployee', name, iqamaNo:iqama, iqamaExpiry:expiry,
     mobile:document.getElementById('fMobile').value,
     branch:document.getElementById('fBranchSel').value,
-    iqamaCost: pr.iqama12 || 14200,
-    monthlyFee: pr.kafala || 250,
-    months:0,
+    iqamaBalance: parseFloat(document.getElementById('fIqamaBalance').value)||0,
+    kafalaCount: parseInt(document.getElementById('fKafalaCount').value)||0,
+    otherDebt: parseFloat(document.getElementById('fOtherDebt').value)||0,
+    otherDebtDesc: document.getElementById('fOtherDebtDesc').value,
     notes:document.getElementById('fNotes').value
   };
   const res = await apiPost(payload);
@@ -2734,4 +2796,35 @@ document.getElementById('saveEmpBtn').addEventListener('click', function patchKa
 // وأضف بعد السطر الأخير قبل const res:
 //   payload.kafalaStartMonth = document.getElementById('fKafalaStartMonth').value;
 //   payload.kafalaStartYear  = document.getElementById('fKafalaStartYear').value;
+
+// ===== EXCEL EXPORT =====
+function exportTableExcel(tableId, title){
+  const tbl = document.getElementById(tableId);
+  if(!tbl){ toast('لا توجد بيانات', 'err'); return; }
+  if(typeof XLSX==='undefined'){ toast('مكتبة Excel غير محملة', 'err'); return; }
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.table_to_sheet(tbl, {raw:false});
+  const range = XLSX.utils.decode_range(ws['!ref']||'A1');
+  const cols = [];
+  for(let c=range.s.c;c<=range.e.c;c++){
+    let max=10;
+    for(let r=range.s.r;r<=range.e.r;r++){
+      const cell=ws[XLSX.utils.encode_cell({r,c})];
+      if(cell&&cell.v) max=Math.max(max,String(cell.v).length+2);
+    }
+    cols.push({wch:Math.min(max,40)});
+  }
+  ws['!cols']=cols;
+  XLSX.utils.book_append_sheet(wb, ws, title.substring(0,31));
+  XLSX.writeFile(wb, title+'-'+new Date().toISOString().slice(0,10)+'.xlsx');
+  toast('تم تصدير Excel ✅','ok');
+}
+function exportCurrentPageExcel(){
+  const page=document.querySelector('.page.active');
+  if(!page){ toast('لا توجد صفحة نشطة','err'); return; }
+  const map={'page-employees':['empTable','الموظفون'],'page-alerts':['iqamaAlertTbl','تنبيهات الإقامة'],
+    'page-payments':['payTable','المدفوعات'],'page-monthly':['monthlyTable','تقرير شهري'],'page-archive':['arcTable','الأرشيف']};
+  if(map[page.id]) exportTableExcel(map[page.id][0], map[page.id][1]);
+  else toast('تصدير Excel غير متاح لهذه الصفحة','err');
+}
 </script>
