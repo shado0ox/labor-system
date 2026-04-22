@@ -953,7 +953,7 @@ tbody td{padding:10px 10px;text-align:center;vertical-align:middle}
       </div>
 
       <div style="background:var(--p3);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:13px;color:var(--p)">
-        📌 سعر الكفالة الشهرية: <strong id="kafalaMonthlyRate">250</strong> ريال — الكفالات المسجلة تُضاف كرصيد على الموظف
+        📌 سعر الكفالة: <strong id="kafalaMonthlyRate">250</strong> ريال/شهر &nbsp;|&nbsp; الكفالات المسجلة حالياً: <strong id="kafalaExistingCount" style="color:var(--green2)">0 شهر</strong>
       </div>
 
       <div class="form-grid">
@@ -1768,10 +1768,22 @@ function showStmt(e){
     + (remainNote ? '<span style="font-size:12px;color:var(--muted);margin-right:10px">'+remainNote+'</span>' : '')
     + '</td></tr></table>'
 
-    + '<div class="stmt-kpis" style="grid-template-columns:repeat(3,1fr);margin-bottom:12px">'
+    + '<div class="stmt-kpis" style="grid-template-columns:repeat(4,1fr);margin-bottom:12px">'
     + '<div class="stmt-box" style="background:var(--p3)"><div class="l">إجمالي المدفوع</div><div class="v" style="color:var(--p)">'+num(e.totalPaid||0)+'</div></div>'
+    + '<div class="stmt-box" style="background:var(--red3)"><div class="l">إجمالي المستحق</div><div class="v" style="color:var(--red2)">'+num(e.totalDue||0)+'</div></div>'
     + '<div class="stmt-box" style="background:var(--orange3)"><div class="l">الرصيد المتبقي</div><div class="v" style="color:var(--orange2)">'+num(e.balance||0)+'</div></div>'
     + '<div class="stmt-box" style="background:var(--green3)"><div class="l">شهور كفالة مدفوعة</div><div class="v" style="color:var(--green2)">'+kafalaPays.length+' شهر</div></div>'
+    + '</div>'
+    + '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px">'
+    + '<div style="background:#fff0f0;border-radius:10px;padding:10px;text-align:center;border-right:3px solid var(--red2)">'
+    + '<div style="font-size:11px;color:var(--muted)">رصيد الإقامة</div>'
+    + '<div style="font-weight:800;font-size:14px;color:var(--red2);margin-top:4px">'+num(e.iqamaBalance||0)+' ر.س</div></div>'
+    + '<div style="background:#f0f4ff;border-radius:10px;padding:10px;text-align:center;border-right:3px solid var(--p)">'
+    + '<div style="font-size:11px;color:var(--muted)">رصيد الكفالة ('+( (e.kafalaCount||0) )+' شهر)</div>'
+    + '<div style="font-weight:800;font-size:14px;color:var(--p);margin-top:4px">'+num((e.kafalaCount||0)*(getPricing().kafala||250))+' ر.س</div></div>'
+    + '<div style="background:#fff8f0;border-radius:10px;padding:10px;text-align:center;border-right:3px solid var(--orange2)">'
+    + '<div style="font-size:11px;color:var(--muted)">مديونات أخرى</div>'
+    + '<div style="font-weight:800;font-size:14px;color:var(--orange2);margin-top:4px">'+num(e.otherDebt||0)+' ر.س'+(e.otherDebtDesc?'<div style="font-size:10px;color:var(--muted);font-weight:400">'+e.otherDebtDesc+'</div>':'')+' </div></div>'
     + '</div>'
 
     + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px">'
@@ -2645,10 +2657,8 @@ function openKafalaModal(e) {
   // show current kafala count on employee
   const empData = state.employees.find(emp => emp.iqamaNo === e.iqamaNo);
   const existingCount = empData ? (empData.kafalaCount || 0) : 0;
-  const infoEl = document.getElementById('kafalaMonthlyRate');
-  if (infoEl) {
-    infoEl.closest('div').innerHTML = `📌 سعر الكفالة: <strong>${p.kafala||250}</strong> ريال/شهر &nbsp;|&nbsp; الكفالات المسجلة حالياً: <strong style="color:var(--green2)">${existingCount} شهر</strong>`;
-  }
+  document.getElementById('kafalaMonthlyRate').textContent = p.kafala || 250;
+  document.getElementById('kafalaExistingCount').textContent = existingCount + ' شهر';
 
   openModal('kafalaModal');
 }
