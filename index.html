@@ -1152,8 +1152,7 @@ async function doLogin(){
     loadCompanySettings(); loadPricingSettings(); renderBranchList(); renderUsersTable();
     logActivity('login', 'تسجيل دخول: ' + profile.name);
     renderActivityLog();
-    loadAll();
-    loadPendingUsers();
+    setTimeout(() => { loadAll(); loadPendingUsers(); }, 800);
     document.querySelectorAll('.nav-btn').forEach(b=>b.addEventListener('click', ()=>goto(b.dataset.page)));
   } catch(err) {
     document.getElementById('loginErr').textContent = 'البريد الإلكتروني أو كلمة المرور غلط';
