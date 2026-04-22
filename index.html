@@ -1154,8 +1154,13 @@ async function doLogin(){
     renderActivityLog();
     await loadAll();
     await loadPendingUsers();
-  } catch(err) {
-    document.getElementById('loginErr').textContent = 'البريد الإلكتروني أو كلمة المرور غلط';
+    } catch(err) {
+    console.error('doLogin error:', err);
+    if(err.code && err.code.includes('auth')) {
+      document.getElementById('loginErr').textContent = 'البريد الإلكتروني أو كلمة المرور غلط';
+    } else {
+      document.getElementById('loginErr').textContent = 'خطأ: ' + err.message;
+    }
   }
 }
 function doLogout(){
