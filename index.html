@@ -215,6 +215,19 @@ tbody td{padding:10px 10px;text-align:center;vertical-align:middle}
 .logo-preview{display:flex;align-items:center;gap:12px;padding:10px;background:var(--surf2);border-radius:10px;margin-bottom:10px}
 .logo-preview img{height:44px;max-width:120px;object-fit:contain;border-radius:8px}
 
+
+/* ─── REGISTER ─── */
+.reg-link{text-align:center;margin-top:14px;font-size:13px;color:var(--muted)}
+.reg-link a{color:var(--p);font-weight:700;cursor:pointer;text-decoration:underline}
+#registerScreen{position:fixed;inset:0;background:linear-gradient(135deg,#0a3259 0%,#0d5189 45%,#1a72b8 100%);display:flex;align-items:center;justify-content:center;z-index:998;overflow:hidden}
+#registerScreen.hidden{display:none}
+#registerScreen::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");}
+.pending-msg{background:#e8f5e9;border:1.5px solid #a5d6a7;border-radius:12px;padding:18px;text-align:center;margin-top:16px;display:none}
+.pending-msg h3{color:var(--green2);font-size:16px;margin-bottom:8px}
+.pending-msg p{font-size:13px;color:var(--gray)}
+.badge-approved{background:var(--green3);color:var(--green2)}
+.badge-rejected{background:var(--red3);color:var(--red)}
+
 /* ─── RESPONSIVE ─── */
 @media(max-width:900px){
   .sidebar{width:230px}.main{margin-right:230px}
@@ -266,6 +279,39 @@ tbody td{padding:10px 10px;text-align:center;vertical-align:middle}
     <input id="loginPass" type="password" placeholder="••••••" autocomplete="current-password"/>
     <button class="login-btn" onclick="doLogin()">دخول ←</button>
     <div class="login-error" id="loginErr"></div>
+    <div class="reg-link"><a onclick="showRegister()">إنشاء حساب جديد ←</a></div>
+    <div class="login-credit">تم إعداد البرنامج بواسطة <strong>Shady Nassef</strong><br><span class="login-version">الإصدار النهائي 2026</span></div>
+  </div>
+</div>
+
+
+<!-- ════════ REGISTER ════════ -->
+<div id="registerScreen" class="hidden">
+  <div class="login-box" style="position:relative;z-index:1">
+    <div class="login-logo">
+      <div class="company-logo-area" style="background:linear-gradient(135deg,var(--green2),#388e3c)">
+        <span style="font-size:36px">📝</span>
+      </div>
+      <h1 style="color:var(--green2)">إنشاء حساب جديد</h1>
+      <p>سيظهر نظام خاص بك وببياناتك فقط</p>
+    </div>
+    <div id="regForm">
+      <label>الاسم الكامل</label>
+      <input id="regName" type="text" placeholder="محمد أحمد" autocomplete="name"/>
+      <label>البريد الإلكتروني</label>
+      <input id="regEmail" type="email" placeholder="example@email.com" autocomplete="email"/>
+      <label>كلمة المرور</label>
+      <input id="regPass" type="password" placeholder="8 أحرف على الأقل" autocomplete="new-password"/>
+      <label>تأكيد كلمة المرور</label>
+      <input id="regPass2" type="password" placeholder="أعد كتابة كلمة المرور" autocomplete="new-password"/>
+      <button class="login-btn" style="background:linear-gradient(135deg,var(--green2),#388e3c);margin-top:4px" onclick="doRegister()">إنشاء الحساب ←</button>
+      <div class="login-error" id="regErr"></div>
+    </div>
+    <div class="pending-msg" id="regSuccess">
+      <h3>✅ تم إنشاء حسابك!</h3>
+      <p>يمكنك الآن تسجيل الدخول بالبريد الإلكتروني وكلمة المرور اللي أدخلتهم</p>
+    </div>
+    <div class="reg-link"><a onclick="showLogin()">← العودة لتسجيل الدخول</a></div>
     <div class="login-credit">تم إعداد البرنامج بواسطة <strong>Shady Nassef</strong><br><span class="login-version">الإصدار النهائي 2026</span></div>
   </div>
 </div>
@@ -507,6 +553,18 @@ tbody td{padding:10px 10px;text-align:center;vertical-align:middle}
 
         <!-- API -->
         
+
+
+        <!-- Registered Users -->
+        <div class="card admin-only" id="pendingUsersCard">
+          <div class="card-h" style="background:var(--green2)"><h3>👥 المستخدمون المسجلون</h3><button class="btn btn-ghost btn-sm" onclick="loadPendingUsers()">🔄 تحديث</button></div>
+          <div class="card-b">
+            <div class="table-wrap"><table>
+              <thead><tr><th>#</th><th>الاسم</th><th>البريد الإلكتروني</th><th>تاريخ التسجيل</th><th>الحالة</th><th>إجراءات</th></tr></thead>
+              <tbody id="pendingUsersBody"><tr><td colspan="6" style="padding:20px;color:var(--muted);text-align:center">جاري التحميل...</td></tr></tbody>
+            </table></div>
+          </div>
+        </div>
 
         <!-- Users Management -->
         <div class="card admin-only">
@@ -1096,19 +1154,25 @@ async function doLogin(){
   try {
     await auth.signInWithEmailAndPassword(u, p);
     const fbUser = auth.currentUser;
-    const found = getUsers().find(x => x.user === u) ||
-                  { name: fbUser.email, user: u, role:'admin', branch:'' };
-    currentUser = found;
+    const uid = fbUser.uid;
+    window._uid = uid;
+    let profile = { name: fbUser.email, user: u, role:'admin', branch:'', uid };
+    try {
+      const doc = await db.collection('userProfiles').doc(uid).get();
+      if(doc.exists) profile = { ...profile, ...doc.data(), user: u };
+    } catch(e){}
+    currentUser = profile;
     document.getElementById('loginScreen').classList.add('hidden');
     document.getElementById('app').classList.add('show');
-    document.getElementById('sbUserName').textContent = found.name;
-    const roleLabels = {admin:'مدير',viewer:'مشاهد',branch:'فرع '+found.branch};
-    document.getElementById('sbUserRole').textContent = roleLabels[found.role]||found.role;
-    document.body.className = 'role-' + found.role;
+    document.getElementById('sbUserName').textContent = profile.name;
+    const roleLabels = {admin:'مدير',viewer:'مشاهد',branch:'فرع '+profile.branch};
+    document.getElementById('sbUserRole').textContent = roleLabels[profile.role]||profile.role;
+    document.body.className = 'role-' + profile.role;
     loadCompanySettings(); loadPricingSettings(); renderBranchList(); renderUsersTable();
-    logActivity('login', 'تسجيل دخول: ' + found.name + ' | ' + found.role);
+    logActivity('login', 'تسجيل دخول: ' + profile.name);
     renderActivityLog();
     loadAll();
+    loadPendingUsers();
     document.querySelectorAll('.nav-btn').forEach(b=>b.addEventListener('click', ()=>goto(b.dataset.page)));
   } catch(err) {
     document.getElementById('loginErr').textContent = 'البريد الإلكتروني أو كلمة المرور غلط';
@@ -1122,6 +1186,83 @@ function doLogout(){
   document.getElementById('loginPass').value = '';
   document.getElementById('loginErr').textContent = '';
   document.body.className = '';
+}
+
+// ─── REGISTER / LOGIN TOGGLE ───
+function showRegister(){
+  document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('registerScreen').classList.remove('hidden');
+  document.getElementById('regErr').textContent='';
+  document.getElementById('regSuccess').style.display='none';
+  document.getElementById('regForm').style.display='';
+}
+function showLogin(){
+  document.getElementById('registerScreen').classList.add('hidden');
+  document.getElementById('loginScreen').classList.remove('hidden');
+}
+async function doRegister(){
+  const name  = document.getElementById('regName').value.trim();
+  const email = document.getElementById('regEmail').value.trim();
+  const pass  = document.getElementById('regPass').value;
+  const pass2 = document.getElementById('regPass2').value;
+  const errEl = document.getElementById('regErr');
+  errEl.textContent='';
+  if(!name)  return errEl.textContent='أدخل الاسم الكامل';
+  if(!email) return errEl.textContent='أدخل البريد الإلكتروني';
+  if(pass.length<8) return errEl.textContent='كلمة المرور 8 أحرف على الأقل';
+  if(pass!==pass2)  return errEl.textContent='كلمتا المرور غير متطابقتين';
+  try {
+    const cred = await auth.createUserWithEmailAndPassword(email, pass);
+    const uid  = cred.user.uid;
+    await db.collection('userProfiles').doc(uid).set({ uid, name, email, role:'admin', createdAt: new Date().toISOString() });
+    await db.collection('users').doc(uid).collection('settings').doc('config').set(
+      { kafala:250, iqama3:3550, iqama6:7100, iqama12:14200, ramadanFree:true }
+    );
+    await auth.signOut();
+    document.getElementById('regForm').style.display='none';
+    document.getElementById('regSuccess').style.display='block';
+  } catch(err) {
+    const msgs={
+      'auth/email-already-in-use':'البريد الإلكتروني مستخدم بالفعل',
+      'auth/invalid-email':'البريد الإلكتروني غير صحيح',
+      'auth/weak-password':'كلمة المرور ضعيفة جداً'
+    };
+    errEl.textContent = msgs[err.code]||err.message;
+  }
+}
+
+// ─── PENDING USERS ───
+async function loadPendingUsers(){
+  const body = document.getElementById('pendingUsersBody');
+  if(!body) return;
+  try {
+    const snap = await db.collection('userProfiles').orderBy('createdAt','desc').get();
+    if(snap.empty){
+      body.innerHTML='<tr><td colspan="6" style="padding:20px;color:var(--muted);text-align:center">لا توجد مستخدمين</td></tr>';
+      return;
+    }
+    body.innerHTML = snap.docs.map((d,i)=>{
+      const u = d.data();
+      return `<tr>
+        <td>${i+1}</td>
+        <td><strong>${u.name||''}</strong></td>
+        <td style="font-size:12px">${u.email||''}</td>
+        <td style="font-size:11px;color:var(--muted)">${u.createdAt?u.createdAt.split('T')[0]:''}</td>
+        <td><span class="badge badge-approved">نشط ✅</span></td>
+        <td><button class="btn btn-red btn-sm" onclick="deleteUserProfile('${u.uid}','${u.name}')">🗑️ حذف</button></td>
+      </tr>`;
+    }).join('');
+  } catch(e){
+    body.innerHTML='<tr><td colspan="6" style="padding:20px;color:var(--red2);text-align:center">خطأ في التحميل</td></tr>';
+  }
+}
+async function deleteUserProfile(uid, name){
+  if(!confirm('حذف مستخدم: '+name+'؟ لن يتمكن من الدخول.')) return;
+  try {
+    await db.collection('userProfiles').doc(uid).delete();
+    toast('تم حذف المستخدم', 'ok');
+    loadPendingUsers();
+  } catch(e){ toast('خطأ: '+e.message,'err'); }
 }
 document.getElementById('loginPass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
 document.getElementById('loginUser').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('loginPass').focus(); });
@@ -1165,19 +1306,24 @@ function filterPaymentsByRole(list){
   return list;
 }
 
-// ══ Firebase — بدل Google Apps Script ══════════════════════
+// ─── UID-scoped collection helper ───
+function userCol(name){
+  const uid = window._uid || (auth.currentUser && auth.currentUser.uid);
+  if(!uid) throw new Error('User not authenticated');
+  return db.collection('users').doc(uid).collection(name);
+}
+
+// ══ Firebase apiPost ════════════════════════════════════════
 
 async function _getSettings() {
   try {
-    const doc = await db.collection('settings').doc('config').get();
+    const doc = await userCol('settings').doc('config').get();
     if(doc.exists) return doc.data();
   } catch(e){}
   return { kafala:250, iqama3:3550, iqama6:7100, iqama12:14200, ramadanFree:true };
 }
 
-async function api(action) {
-  return await apiPost({ action });
-}
+async function api(action) { return await apiPost({ action }); }
 
 async function apiPost(body) {
   try {
@@ -1185,8 +1331,8 @@ async function apiPost(body) {
 
     if (action === 'getEmployees') {
       const [eSnap, pSnap] = await Promise.all([
-        db.collection('employees').where('status','==','active').get(),
-        db.collection('payments').get()
+        userCol('employees').where('status','==','active').get(),
+        userCol('payments').get()
       ]);
       const payments = pSnap.docs.map(d => d.data());
       const cfg = await _getSettings();
@@ -1202,23 +1348,21 @@ async function apiPost(body) {
     }
 
     if (action === 'addEmployee') {
-      const exists = await db.collection('employees').doc(body.iqamaNo).get();
+      const exists = await userCol('employees').doc(body.iqamaNo).get();
       if (exists.exists) return { success:false, error:'رقم الإقامة موجود مسبقاً' };
-      await db.collection('employees').doc(body.iqamaNo).set({
-        ...body, status:'active', addedDate: new Date().toISOString()
-      });
+      await userCol('employees').doc(body.iqamaNo).set({ ...body, status:'active', addedDate: new Date().toISOString() });
       return { success:true };
     }
 
     if (action === 'updateEmployee') {
-      await db.collection('employees').doc(body.iqamaNo).update(body);
+      await userCol('employees').doc(body.iqamaNo).update(body);
       return { success:true };
     }
 
     if (action === 'archiveEmployee') {
-      const pSnap = await db.collection('payments').where('iqamaNo','==',body.iqamaNo).get();
+      const pSnap = await userCol('payments').where('iqamaNo','==',body.iqamaNo).get();
       const totalPaid = pSnap.docs.reduce((s,d)=>s+(d.data().amount||0),0);
-      await db.collection('employees').doc(body.iqamaNo).update({
+      await userCol('employees').doc(body.iqamaNo).update({
         status:'archived', archiveReason: body.archiveReason||'',
         archiveDate: new Date().toISOString(), totalPaid, balance: totalPaid
       });
@@ -1226,49 +1370,47 @@ async function apiPost(body) {
     }
 
     if (action === 'addPayment') {
-      await db.collection('payments').add({ ...body, date: new Date().toISOString().split('T')[0] });
+      await userCol('payments').add({ ...body, date: new Date().toISOString().split('T')[0] });
       return { success:true };
     }
 
     if (action === 'getPayments') {
-      const snap = await db.collection('payments').orderBy('date','desc').get();
+      const snap = await userCol('payments').orderBy('date','desc').get();
       return { payments: snap.docs.map(d => d.data()) };
     }
 
     if (action === 'addIqamaRenewal') {
-      await db.collection('iqamaRenewals').add({ ...body, renewDate: new Date().toISOString() });
+      await userCol('iqamaRenewals').add({ ...body, renewDate: new Date().toISOString() });
       return { success:true };
     }
 
     if (action === 'addKafalaOrder') {
-      await db.collection('kafalaOrders').add({ ...body, orderDate: new Date().toISOString() });
+      await userCol('kafalaOrders').add({ ...body, orderDate: new Date().toISOString() });
       return { success:true };
     }
 
     if (action === 'updateIqamaExpiry') {
-      await db.collection('employees').doc(body.iqamaNo).update({ iqamaExpiry: body.newExpiry });
+      await userCol('employees').doc(body.iqamaNo).update({ iqamaExpiry: body.newExpiry });
       return { success:true };
     }
 
-    if (action === 'getSettings') {
-      return await _getSettings();
-    }
+    if (action === 'getSettings') { return await _getSettings(); }
 
     if (action === 'saveSettings') {
-      await db.collection('settings').doc('config').set(body);
+      await userCol('settings').doc('config').set(body);
       return { success:true };
     }
 
     if (action === 'getArchive') {
-      const snap = await db.collection('employees').where('status','==','archived').get();
+      const snap = await userCol('employees').where('status','==','archived').get();
       return { archive: snap.docs.map(d => d.data()) };
     }
 
     if (action === 'getDashboard') {
       const [empSnap, arcSnap, paySnap] = await Promise.all([
-        db.collection('employees').where('status','==','active').get(),
-        db.collection('employees').where('status','==','archived').get(),
-        db.collection('payments').get()
+        userCol('employees').where('status','==','active').get(),
+        userCol('employees').where('status','==','archived').get(),
+        userCol('payments').get()
       ]);
       const employees = empSnap.docs.map(d => d.data());
       const payments  = paySnap.docs.map(d => d.data());
@@ -1292,18 +1434,13 @@ async function apiPost(body) {
         if(bal<0) branchMap[b].debt++;
         branchMap[b].bal += bal;
       });
-      return {
-        active:employees.length, archived:arcSnap.size,
-        exp30, exp60, debt, totalPaid, totalBalance:totalBal,
-        branches: Object.values(branchMap)
-      };
+      return { active:employees.length, archived:arcSnap.size, exp30, exp60, debt, totalPaid, totalBalance:totalBal, branches: Object.values(branchMap) };
     }
 
     if (action === 'getAlerts') {
       const res = await apiPost({action:'getEmployees'});
       const emps = res.employees || [];
-      const iqamaAlerts = emps.filter(e=>e.daysLeft!==null&&e.daysLeft<=90&&e.daysLeft>=0)
-                              .sort((a,b)=>a.daysLeft-b.daysLeft);
+      const iqamaAlerts = emps.filter(e=>e.daysLeft!==null&&e.daysLeft<=90&&e.daysLeft>=0).sort((a,b)=>a.daysLeft-b.daysLeft);
       const debtAlerts  = emps.filter(e=>e.balance<0).sort((a,b)=>a.balance-b.balance);
       return { iqamaAlerts, debtAlerts };
     }
@@ -1315,7 +1452,7 @@ async function apiPost(body) {
   }
 }
 
-function loadApiFromSettings(){ /* Firebase — لا يحتاج API URL */ }
+function loadApiFromSettings(){ /* Firebase */ }
 function saveApiFromSettings(){ toast('النظام يعمل على Firebase ✅', 'ok'); }
 
 
@@ -1694,44 +1831,6 @@ async function savePricingSettings(){
     ramadanFree: document.getElementById('ramadanFree').checked
   };
   localStorage.setItem(PRICING_KEY, JSON.stringify(p));
-  // Sync to Google Sheets Settings sheet
-  // حفظ في Firebase
-  try{ await apiPost({ action:'saveSettings', kafala:p.kafala, iqama3:p.iqama3, iqama6:p.iqama6, iqama12:p.iqama12, ramadanFree:p.ramadanFree }); }catch(e){}
-  toast('تم حفظ المبالغ ✅', 'ok');
-}
-async function loadPricingSettings(){
-  // First load from localStorage (instant)
-  const p = getPricing();
-  if(document.getElementById('priceKafala')){
-    document.getElementById('priceKafala').value = p.kafala || 250;
-    document.getElementById('priceIqama3').value = p.iqama3 || 3550;
-    document.getElementById('priceIqama6').value = p.iqama6 || 7100;
-    document.getElementById('priceIqama12').value = p.iqama12 || 14200;
-    document.getElementById('ramadanFree').checked = p.ramadanFree !== false;
-  }
-  // Then sync from Google Sheets Settings sheet
-  if(API){
-    try{
-      const res = await api('getSettings');
-      if(res && res.kafala){
-        const synced = {
-          kafala: +res.kafala || 250,
-          iqama3: +res.iqama3 || 3550,
-          iqama6: +res.iqama6 || 7100,
-          iqama12: +res.iqama12 || 14200,
-          ramadanFree: res.ramadanFree !== false && res.ramadanFree !== 'false'
-        };
-        localStorage.setItem(PRICING_KEY, JSON.stringify(synced));
-        if(document.getElementById('priceKafala')){
-          document.getElementById('priceKafala').value = synced.kafala;
-          document.getElementById('priceIqama3').value = synced.iqama3;
-          document.getElementById('priceIqama6').value = synced.iqama6;
-          document.getElementById('priceIqama12').value = synced.iqama12;
-          document.getElementById('ramadanFree').checked = synced.ramadanFree;
-        }
-      }
-    }catch(e){}
-  }
 }
 
 // ─── PAY TAB ───
@@ -2060,7 +2159,7 @@ function delUser(i){
 }
 
 // ─── SETTINGS API SAVE ───
-document.getElementById('saveApiBtn')?.addEventListener('click', () => { toast('النظام يعمل على Firebase ✅', 'ok'); });;
+document.getElementById('saveApiBtn')?.addEventListener('click', () => { toast('النظام يعمل على Firebase ✅', 'ok'); });
 
 // ─── PDF EXPORT — دعم عربي ───
 function buildArabicPDF(title, heads, rows, orient){
