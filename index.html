@@ -1149,7 +1149,7 @@ async function doLogin(){
     const roleLabels = {admin:'مدير',viewer:'مشاهد',branch:'فرع '+profile.branch};
     document.getElementById('sbUserRole').textContent = roleLabels[profile.role]||profile.role;
     document.body.className = 'role-' + profile.role;
-    loadCompanySettings(); loadPricingSettings(); renderBranchList(); renderUsersTable();
+    loadCompanySettings();  renderBranchList(); renderUsersTable();
     logActivity('login', 'تسجيل دخول: ' + profile.name);
     renderActivityLog();
     await loadAll();
