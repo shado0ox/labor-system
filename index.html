@@ -1152,7 +1152,9 @@ async function doLogin(){
     loadCompanySettings(); loadPricingSettings(); renderBranchList(); renderUsersTable();
     logActivity('login', 'تسجيل دخول: ' + profile.name);
     renderActivityLog();
-    setTimeout(() => { loadAll(); loadPendingUsers(); }, 800);
+    await new Promise(r => setTimeout(r, 500));
+    await loadAll();
+    await loadPendingUsers();
     document.querySelectorAll('.nav-btn').forEach(b=>b.addEventListener('click', ()=>goto(b.dataset.page)));
   } catch(err) {
     document.getElementById('loginErr').textContent = 'البريد الإلكتروني أو كلمة المرور غلط';
