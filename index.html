@@ -1153,12 +1153,9 @@ document.querySelectorAll('.nav-btn').forEach(b=>b.addEventListener('click', ()=
 loadCompanySettings(); loadPricingSettings(); renderBranchList(); renderUsersTable();
 logActivity('login', 'تسجيل دخول: ' + profile.name);
 renderActivityLog();
-requestAnimationFrame(() => {
-  setTimeout(() => {
-    loadAll();
-    loadPendingUsers();
-  }, 300);
-});
+await new Promise(r => setTimeout(r, 500));
+    await loadAll();
+    await loadPendingUsers();
   } catch(err) {
     document.getElementById('loginErr').textContent = 'البريد الإلكتروني أو كلمة المرور غلط';
   }
