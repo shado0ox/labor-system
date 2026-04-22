@@ -1291,7 +1291,11 @@ function filterPaymentsByRole(list){
 // ─── UID-scoped collection helper ───
 function userCol(name){
   const uid = window._uid || (auth.currentUser && auth.currentUser.uid);
-  if(!uid) throw new Error('User not authenticated');
+  if(!uid){
+    const u = auth.currentUser;
+    if(u){ window._uid = u.uid; return db.collection('users').doc(u.uid).collection(name); }
+    throw new Error('User not authenticated');
+  }
   return db.collection('users').doc(uid).collection(name);
 }
 
