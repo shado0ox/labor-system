@@ -1156,7 +1156,7 @@ renderActivityLog();
 await new Promise(r => setTimeout(r, 500));
     await loadAll();
     await loadPendingUsers();
-    renderDashboard();
+     goto('dashboard');
   } catch(err) {
     document.getElementById('loginErr').textContent = 'البريد الإلكتروني أو كلمة المرور غلط';
   }
