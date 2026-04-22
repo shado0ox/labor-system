@@ -943,7 +943,7 @@ tbody td{padding:10px 10px;text-align:center;vertical-align:middle}
 <div class="overlay" id="kafalaModal">
   <div class="modal modal-sm">
     <div class="modal-h" style="background:var(--green2)">
-      <h3>💰 أمر كفالة</h3>
+      <h3>🔒 تسجيل كفالة</h3>
       <button class="close-btn" onclick="closeModal('kafalaModal')">×</button>
     </div>
     <div class="modal-b">
@@ -953,88 +953,46 @@ tbody td{padding:10px 10px;text-align:center;vertical-align:middle}
       </div>
 
       <div style="background:var(--p3);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:13px;color:var(--p)">
-        📌 تكلفة الكفالة الشهرية: <strong id="kafalaMonthlyRate">250</strong> ريال
+        📌 سعر الكفالة الشهرية: <strong id="kafalaMonthlyRate">250</strong> ريال — الكفالات المسجلة تُضاف كرصيد على الموظف
       </div>
 
       <div class="form-grid">
         <div class="fld">
-          <label>من شهر (هجري)</label>
-          <select id="kafalaFromMonth" onchange="calcKafalaOrderAmount()">
-            <option value="">— اختر —</option>
-            <option value="محرم">محرم</option>
-            <option value="صفر">صفر</option>
-            <option value="ربيع الأول">ربيع الأول</option>
-            <option value="ربيع الآخر">ربيع الآخر</option>
-            <option value="جمادى الأولى">جمادى الأولى</option>
-            <option value="جمادى الآخرة">جمادى الآخرة</option>
-            <option value="رجب">رجب</option>
-            <option value="شعبان">شعبان</option>
-            <option value="رمضان">رمضان</option>
-            <option value="شوال">شوال</option>
-            <option value="ذو القعدة">ذو القعدة</option>
-            <option value="ذو الحجة">ذو الحجة</option>
+          <label>🔒 عدد الكفالات (أشهر)</label>
+          <input id="kafalaNewCount" type="number" min="1" placeholder="1" oninput="calcKafalaDebtPreview()" style="font-weight:800;font-size:16px"/>
+          <div class="hijri-hint" id="kafalaDebtPreview" style="color:var(--green2)"></div>
+        </div>
+        <div class="fld">
+          <label>من شهر هجري (اختياري)</label>
+          <select id="kafalaRegFromMonth">
+            <option value="">— اختياري —</option>
+            <option value="محرم">محرم</option><option value="صفر">صفر</option>
+            <option value="ربيع الأول">ربيع الأول</option><option value="ربيع الآخر">ربيع الآخر</option>
+            <option value="جمادى الأولى">جمادى الأولى</option><option value="جمادى الآخرة">جمادى الآخرة</option>
+            <option value="رجب">رجب</option><option value="شعبان">شعبان</option>
+            <option value="رمضان">رمضان</option><option value="شوال">شوال</option>
+            <option value="ذو القعدة">ذو القعدة</option><option value="ذو الحجة">ذو الحجة</option>
           </select>
         </div>
         <div class="fld">
-          <label>السنة الهجرية (من)</label>
-          <select id="kafalaFromYear" onchange="calcKafalaOrderAmount()"></select>
-        </div>
-        <div class="fld">
-          <label>إلى شهر (هجري)</label>
-          <select id="kafalaToMonth" onchange="calcKafalaOrderAmount()">
-            <option value="">— اختر —</option>
-            <option value="محرم">محرم</option>
-            <option value="صفر">صفر</option>
-            <option value="ربيع الأول">ربيع الأول</option>
-            <option value="ربيع الآخر">ربيع الآخر</option>
-            <option value="جمادى الأولى">جمادى الأولى</option>
-            <option value="جمادى الآخرة">جمادى الآخرة</option>
-            <option value="رجب">رجب</option>
-            <option value="شعبان">شعبان</option>
-            <option value="رمضان">رمضان</option>
-            <option value="شوال">شوال</option>
-            <option value="ذو القعدة">ذو القعدة</option>
-            <option value="ذو الحجة">ذو الحجة</option>
-          </select>
-        </div>
-        <div class="fld">
-          <label>السنة الهجرية (إلى)</label>
-          <select id="kafalaToYear" onchange="calcKafalaOrderAmount()"></select>
-        </div>
-        <div class="fld">
-          <label>عدد الشهور (محسوب تلقائياً)</label>
-          <input id="kafalaMonths" type="number" min="1" readonly style="background:#f0f4fa;font-weight:800">
-        </div>
-        <div class="fld">
-          <label>إجمالي الكفالة (ريال)</label>
-          <input id="kafalaAmount" type="number" min="0">
-          <div class="hijri-hint" id="kafalaAmountHint" style="color:var(--green2)"></div>
-        </div>
-        <div class="fld">
-          <label>طريقة الدفع</label>
-          <select id="kafalaPayMethod">
-            <option value="تحويل بنكي">تحويل بنكي</option>
-            <option value="نقداً">نقداً</option>
-            <option value="شيك">شيك</option>
-            <option value="مدى">مدى</option>
-            <option value="آجل">آجل</option>
-          </select>
-        </div>
-        <div class="fld">
-          <label>تاريخ الدفع</label>
-          <input id="kafalaPayDate" type="date">
+          <label>السنة الهجرية</label>
+          <select id="kafalaRegFromYear"></select>
         </div>
         <div class="fld full">
           <label>ملاحظات</label>
-          <textarea id="kafalaNotes" style="min-height:50px"></textarea>
+          <textarea id="kafalaRegNotes" style="min-height:50px" placeholder="ملاحظات اختيارية..."></textarea>
         </div>
+      </div>
+      <div style="background:var(--green3);border-radius:10px;padding:10px 14px;margin-top:10px;font-size:13px;color:var(--green2)">
+        💡 الدفع يتم لاحقاً من زر <strong>دفعة</strong> في جدول الموظفين
       </div>
     </div>
     <div class="modal-f">
       <button class="btn btn-ghost" onclick="closeModal('kafalaModal')">إلغاء</button>
-      <button class="btn btn-green" id="saveKafalaOrderBtn">✅ حفظ أمر الكفالة</button>
+      <button class="btn btn-green" id="saveKafalaOrderBtn">✅ تسجيل الكفالة</button>
     </div>
   </div>
+</div></div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -2606,23 +2564,32 @@ document.getElementById('saveRenewBtn').addEventListener('click', async () => {
   const cost = +document.getElementById('renewCost').value;
   if (!cost) { toast('أدخل تكلفة الإقامة', 'err'); return; }
   const notes = document.getElementById('renewNotes').value;
-  const res = await apiPost({
+  // حفظ سجل التجديد
+  await apiPost({
     action: 'addIqamaRenewal',
     iqamaNo: renewEmp.iqamaNo,
     name: renewEmp.name,
     branch: renewEmp.branch,
     renewMonths: currentRenewMonths,
     renewCost: cost,
-    newExpiry: '',   // يُحدَّث لاحقاً
+    newExpiry: '',
     notes
   });
-  if (res && res.success) {
+  // إضافة المبلغ كمديونية إقامة على الموظف
+  const empData = state.employees.find(e => e.iqamaNo === renewEmp.iqamaNo);
+  const oldBal = empData ? (empData.iqamaBalance || 0) : 0;
+  const res2 = await apiPost({
+    action: 'updateEmployee',
+    iqamaNo: renewEmp.iqamaNo,
+    iqamaBalance: oldBal + cost
+  });
+  if (res2 && res2.success) {
     closeModal('renewModal');
-    toast('✅ تم حفظ التجديد — حدّث تاريخ الانتهاء من زر تحديث الإقامة', 'ok');
+    toast('✅ تمت إضافة ' + cost + ' ر.س رصيد إقامة على الموظف', 'ok');
     logActivity('pay', `تجديد إقامة: ${renewEmp.name} | ${currentRenewMonths} شهر | ${cost} ريال`);
     loadAll();
   } else {
-    toast(res?.error || 'خطأ في الحفظ', 'err');
+    toast('خطأ في تحديث رصيد الموظف', 'err');
   }
 });
 
@@ -2661,111 +2628,89 @@ document.getElementById('saveNewExpiryBtn').addEventListener('click', async () =
 function openKafalaModal(e) {
   kafalaOrderEmp = e;
   document.getElementById('kafalaEmpName').value = e.name + ' — ' + e.iqamaNo;
-  document.getElementById('kafalaNotes').value = '';
-  document.getElementById('kafalaFromMonth').value = '';
-  document.getElementById('kafalaToMonth').value = '';
-  document.getElementById('kafalaPayMethod').value = 'تحويل بنكي';
-  document.getElementById('kafalaPayDate').value = new Date().toISOString().split('T')[0];
-  document.getElementById('kafalaMonths').value = '';
-  document.getElementById('kafalaAmount').value = '';
-  document.getElementById('kafalaAmountHint').textContent = '';
+  document.getElementById('kafalaRegNotes').value = '';
+  document.getElementById('kafalaRegFromMonth').value = '';
+  document.getElementById('kafalaNewCount').value = '';
+  document.getElementById('kafalaDebtPreview').textContent = '';
 
   const p = getPricing();
   document.getElementById('kafalaMonthlyRate').textContent = p.kafala || 250;
 
-  populateHijriYears('kafalaFromYear');
-  populateHijriYears('kafalaToYear');
+  // init year dropdown
+  const yrSel = document.getElementById('kafalaRegFromYear');
+  if (yrSel.options.length <= 1) {
+    populateHijriYears('kafalaRegFromYear');
+  }
 
-  // ضبط السنة الحالية
-  const cur = g2hObj ? g2hObj(new Date()) : null;
-  if (cur) {
-    document.getElementById('kafalaFromMonth').value = HIJRI_MONTHS_LIST[cur.m - 1] || '';
-    document.getElementById('kafalaToMonth').value   = HIJRI_MONTHS_LIST[cur.m - 1] || '';
+  // show current kafala count on employee
+  const empData = state.employees.find(emp => emp.iqamaNo === e.iqamaNo);
+  const existingCount = empData ? (empData.kafalaCount || 0) : 0;
+  const infoEl = document.getElementById('kafalaMonthlyRate');
+  if (infoEl) {
+    infoEl.closest('div').innerHTML = `📌 سعر الكفالة: <strong>${p.kafala||250}</strong> ريال/شهر &nbsp;|&nbsp; الكفالات المسجلة حالياً: <strong style="color:var(--green2)">${existingCount} شهر</strong>`;
   }
 
   openModal('kafalaModal');
 }
 
-function calcKafalaOrderAmount() {
-  const fromM = document.getElementById('kafalaFromMonth').value;
-  const fromY = +document.getElementById('kafalaFromYear').value;
-  const toM   = document.getElementById('kafalaToMonth').value;
-  const toY   = +document.getElementById('kafalaToYear').value;
-  if (!fromM || !toM || !fromY || !toY) return;
-
-  const fi = HIJRI_MONTHS_LIST.indexOf(fromM) + 1;
-  const ti = HIJRI_MONTHS_LIST.indexOf(toM)   + 1;
-  if (fi < 1 || ti < 1) return;
-
-  const months = (toY - fromY) * 12 + (ti - fi) + 1;
-  if (months < 1) {
-    document.getElementById('kafalaAmountHint').textContent = '⚠️ تاريخ النهاية قبل البداية!';
-    document.getElementById('kafalaAmountHint').style.color = 'var(--red2)';
-    document.getElementById('kafalaMonths').value = '';
-    document.getElementById('kafalaAmount').value = '';
-    return;
-  }
-
+function calcKafalaDebtPreview() {
+  const count = parseInt(document.getElementById('kafalaNewCount').value) || 0;
   const p = getPricing();
-  const rate = p.kafala || 250;
-  const ramadanFree = p.ramadanFree !== false;
-
-  // احتساب شهر رمضان مجاناً إذا كان مفعَّل
-  let freeMonths = 0;
-  if (ramadanFree) {
-    for (let y = fromY; y <= toY; y++) {
-      const mStart = (y === fromY) ? fi : 1;
-      const mEnd   = (y === toY)   ? ti : 12;
-      if (mStart <= 9 && mEnd >= 9) freeMonths++;
-    }
+  const total = count * (p.kafala || 250);
+  const el = document.getElementById('kafalaDebtPreview');
+  if (count > 0) {
+    el.textContent = count + ' كفالة × ' + (p.kafala||250) + ' ر.س = ' + total + ' ر.س ستُضاف كرصيد على الموظف';
+    el.style.color = 'var(--green2)';
+  } else {
+    el.textContent = '';
   }
+}
 
-  const paidMonths = months - freeMonths;
-  const total = paidMonths * rate;
-
-  document.getElementById('kafalaMonths').value = months;
-  document.getElementById('kafalaAmount').value = total;
-  document.getElementById('kafalaAmountHint').style.color = 'var(--green2)';
-  document.getElementById('kafalaAmountHint').textContent =
-    `${months} شهر × ${rate} ريال` +
-    (freeMonths > 0 ? ` (رمضان مجاناً: ${freeMonths} شهر)` : '') +
-    ` = ${total} ريال`;
+function calcKafalaOrderAmount() {
+  // legacy function - no longer used
 }
 
 document.getElementById('saveKafalaOrderBtn').addEventListener('click', async () => {
   if (!kafalaOrderEmp) return;
-  const fromM  = document.getElementById('kafalaFromMonth').value;
-  const fromY  = document.getElementById('kafalaFromYear').value;
-  const toM    = document.getElementById('kafalaToMonth').value;
-  const toY    = document.getElementById('kafalaToYear').value;
-  const months = +document.getElementById('kafalaMonths').value;
-  const amount = +document.getElementById('kafalaAmount').value;
+  const newCount = parseInt(document.getElementById('kafalaNewCount').value) || 0;
+  if (newCount < 1) { toast('أدخل عدد الكفالات', 'err'); return; }
+  const fromM = document.getElementById('kafalaRegFromMonth').value;
+  const fromY = document.getElementById('kafalaRegFromYear').value;
+  const notes = document.getElementById('kafalaRegNotes').value;
+  const p = getPricing();
 
-  if (!fromM || !toM || !months || months < 1) {
-    toast('اختر الفترة الهجرية أولاً', 'err'); return;
-  }
-  if (!amount) { toast('المبلغ مطلوب', 'err'); return; }
+  // حساب المبلغ الجديد
+  const addedAmount = newCount * (p.kafala || 250);
+
+  // تحديث kafalaCount على الموظف في Firestore
+  const empData = state.employees.find(e => e.iqamaNo === kafalaOrderEmp.iqamaNo);
+  const oldCount = empData ? (empData.kafalaCount || 0) : 0;
 
   const res = await apiPost({
-    action    : 'addKafalaOrder',
-    iqamaNo   : kafalaOrderEmp.iqamaNo,
-    name      : kafalaOrderEmp.name,
-    branch    : kafalaOrderEmp.branch,
-    fromMonth : fromM, fromYear: fromY,
-    toMonth   : toM,   toYear  : toY,
-    months, amount,
-    payMethod : document.getElementById('kafalaPayMethod').value,
-    payDate   : document.getElementById('kafalaPayDate').value,
-    notes     : document.getElementById('kafalaNotes').value
+    action: 'updateEmployee',
+    iqamaNo: kafalaOrderEmp.iqamaNo,
+    kafalaCount: oldCount + newCount
+  });
+
+  // حفظ سجل في kafalaOrders للمرجعية
+  await apiPost({
+    action: 'addKafalaOrder',
+    iqamaNo: kafalaOrderEmp.iqamaNo,
+    name: kafalaOrderEmp.name,
+    branch: kafalaOrderEmp.branch,
+    fromMonth: fromM, fromYear: fromY,
+    months: newCount,
+    amount: addedAmount,
+    notes
   });
 
   if (res && res.success) {
     closeModal('kafalaModal');
-    toast(`✅ تم حفظ أمر الكفالة: ${months} شهر — ${amount} ريال`, 'ok');
-    logActivity('pay', `أمر كفالة: ${kafalaOrderEmp.name} | ${fromM} ${fromY} ← ${toM} ${toY} | ${amount} ريال`);
+    toast(`✅ تم تسجيل ${newCount} كفالة — ${addedAmount} ر.س على الموظف`, 'ok');
+    logActivity('pay', `تسجيل كفالة: ${kafalaOrderEmp.name} | ${newCount} شهر | ${addedAmount} ريال`);
     loadAll();
   } else {
-    toast(res?.error || 'خطأ في الحفظ', 'err');
+    toast(res?.error || 'خطأ في التحديث', 'err');
   }
 });
 
