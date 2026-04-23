@@ -250,9 +250,10 @@ tbody td{padding:10px 10px;text-align:center;vertical-align:middle}
 }
 /* ── MOBILE ── */
 @media(max-width:620px){
-  .sidebar{transform:translateX(265px);transition:.3s;width:265px}
+  #sidebarToggle{display:block!important}
+  .sidebar{transform:translateX(100%);transition:transform .3s ease;width:280px;z-index:100}
   .sidebar.open{transform:translateX(0)}
-  .main{margin-right:0}
+  .main{margin-right:0!important}
   .wrap{padding:10px 10px}
   .topbar{padding:0 10px;gap:6px;flex-wrap:wrap}
   .topbar h2{font-size:14px}
@@ -270,8 +271,8 @@ tbody td{padding:10px 10px;text-align:center;vertical-align:middle}
   .modal-b{padding:14px}
   .form-grid{grid-template-columns:1fr;gap:10px}
   .tab-switch button{padding:7px 6px;font-size:12px}
-  .nav-btn{padding:10px 10px;font-size:12px}
-  .nav-btn span{display:none}
+  .nav-btn{padding:12px 14px;font-size:13px}
+  .nav-btn .nav-badge{display:none}
   .filters{flex-direction:column;gap:8px}
   .filters input,.filters select{width:100%}
   #pwaInstallBar{display:flex}
@@ -1125,6 +1126,7 @@ function saveCompanySettings(){
   const name = document.getElementById('companyNameInput').value.trim();
   localStorage.setItem(COMPANY_KEY, JSON.stringify({ name: name || 'نظام إدارة العمالة' }));
   loadCompanySettings();
+  buildPWAManifest();
   toast('تم حفظ هوية الشركة', 'ok');
   logActivity('login', 'تم تحديث هوية الشركة: ' + name);
 }
@@ -1141,6 +1143,7 @@ function handleLogoUpload(event){
     document.getElementById('logoPreviewImg').style.display = 'block';
     document.getElementById('logoDropTxt').style.display = 'none';
     toast('تم رفع الشعار', 'ok');
+    setTimeout(buildPWAManifest, 200);
   };
   reader.readAsDataURL(file);
 }
@@ -1170,6 +1173,7 @@ function clearLogo(){
   document.getElementById('logoDropTxt').style.display = '';
   document.getElementById('logoFileInput').value = '';
   toast('تم حذف الشعار', 'ok');
+  setTimeout(buildPWAManifest, 200);
 }
 
 // ─── LOGIN ───
@@ -2951,12 +2955,26 @@ function exportCurrentPageExcel(){
 // ═══════════════════════════════════════════════════════
 
 // Inject manifest dynamically
-(function(){
+function buildPWAManifest(){
   const company = JSON.parse(localStorage.getItem(COMPANY_KEY)||'{}');
+  const logo    = localStorage.getItem(LOGO_KEY)||'';
   const appName = company.name || 'نظام العمالة';
+
+  // build icons array — use company logo if available (as data URI)
+  const defaultIcon = 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png';
+  const icons = logo
+    ? [
+        {src: logo, sizes:'192x192', type: logo.startsWith('data:image/png')?'image/png':'image/jpeg'},
+        {src: logo, sizes:'512x512', type: logo.startsWith('data:image/png')?'image/png':'image/jpeg'}
+      ]
+    : [
+        {src: defaultIcon, sizes:'192x192', type:'image/png'},
+        {src: defaultIcon, sizes:'512x512', type:'image/png'}
+      ];
+
   const manifest = {
     name: appName,
-    short_name: appName,
+    short_name: appName.length > 12 ? appName.substring(0,12) : appName,
     description: 'نظام إدارة العمالة الاحترافي',
     start_url: './',
     display: 'standalone',
@@ -2965,15 +2983,28 @@ function exportCurrentPageExcel(){
     theme_color: '#0d5189',
     lang: 'ar',
     dir: 'rtl',
-    icons: [
-      {src:'https://cdn-icons-png.flaticon.com/512/3135/3135715.png', sizes:'192x192', type:'image/png'},
-      {src:'https://cdn-icons-png.flaticon.com/512/3135/3135715.png', sizes:'512x512', type:'image/png'}
-    ]
+    icons
   };
+
   const blob = new Blob([JSON.stringify(manifest)], {type:'application/json'});
-  const url = URL.createObjectURL(blob);
-  document.getElementById('pwaManifest').href = url;
-})();
+  // revoke old URL if exists
+  const el = document.getElementById('pwaManifest');
+  if(el.href && el.href.startsWith('blob:')) URL.revokeObjectURL(el.href);
+  el.href = URL.createObjectURL(blob);
+
+  // also update apple-touch-icon dynamically
+  if(logo){
+    let appleIcon = document.getElementById('appleIcon');
+    if(!appleIcon){
+      appleIcon = document.createElement('link');
+      appleIcon.id = 'appleIcon';
+      appleIcon.rel = 'apple-touch-icon';
+      document.head.appendChild(appleIcon);
+    }
+    appleIcon.href = logo;
+  }
+}
+buildPWAManifest();
 
 // PWA Install prompt
 let deferredPrompt = null;
