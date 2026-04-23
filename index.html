@@ -52,7 +52,7 @@ a{text-decoration:none;color:inherit}button,input,select,textarea{font:inherit;o
 
 /* ─── LAYOUT ─── */
 #app{display:none}#app.show{display:flex;min-height:100vh}
-.sidebar{width:265px;min-height:calc(var(--vh,1vh)*100);background:linear-gradient(180deg,#082d4f 0%,#0d5189 100%);color:#fff;display:flex;flex-direction:column;position:fixed;right:0;top:0;bottom:0;overflow-y:auto;z-index:40;box-shadow:-4px 0 24px rgba(0,0,0,.15)}
+.sidebar{width:265px;min-height:calc(var(--vh,1vh)*100);background:linear-gradient(180deg,#082d4f 0%,#0d5189 100%);color:#fff;display:flex;flex-direction:column;position:fixed;right:0;top:0;bottom:0;overflow-y:auto;z-index:200;box-shadow:-4px 0 24px rgba(0,0,0,.15)}
 .sb-brand{padding:20px 18px 16px;border-bottom:1px solid rgba(255,255,255,.1);display:flex;align-items:center;gap:12px}
 .sb-logo{width:42px;height:42px;border-radius:10px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;overflow:hidden}
 .sb-logo img{width:100%;height:100%;object-fit:cover;border-radius:10px}
@@ -73,6 +73,7 @@ a{text-decoration:none;color:inherit}button,input,select,textarea{font:inherit;o
 .sb-credit strong{opacity:1}
 
 .main{margin-right:265px;flex:1;display:flex;flex-direction:column;min-width:0}
+#sidebarToggle{display:none}
 .topbar{background:rgba(240,244,250,.97);backdrop-filter:blur(12px);padding:13px 26px;display:flex;justify-content:space-between;align-items:center;gap:12px;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:30}
 .topbar h2{font-size:21px;font-weight:900;color:var(--p)}
 .tb-actions{display:flex;gap:8px;flex-wrap:wrap}
@@ -251,7 +252,8 @@ tbody td{padding:10px 10px;text-align:center;vertical-align:middle}
 /* ── MOBILE ── */
 @media(max-width:620px){
   #sidebarToggle{display:block!important}
-  .sidebar{transform:translateX(100%);transition:transform .3s ease;width:280px;z-index:100}
+  .sidebar{right:0}
+  .sidebar{transform:translateX(100%);transition:transform .3s ease;width:280px;z-index:300}
   .sidebar.open{transform:translateX(0)}
   .main{margin-right:0!important}
   .wrap{padding:10px 10px}
@@ -314,7 +316,7 @@ tbody td{padding:10px 10px;text-align:center;vertical-align:middle}
   </div>
 </div>
 <!-- Overlay for sidebar on mobile -->
-<div id="sidebarOverlay" onclick="toggleSidebar()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:90"></div>
+<div id="sidebarOverlay" onclick="toggleSidebar()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:150"></div>
 
 <div id="loginScreen">
   <div class="login-box">
@@ -417,6 +419,7 @@ tbody td{padding:10px 10px;text-align:center;vertical-align:middle}
   <!-- MAIN -->
   <main class="main">
     <header class="topbar">
+      <button id="sidebarToggle" onclick="toggleSidebar()" style="background:transparent;border:none;color:var(--text);font-size:22px;cursor:pointer;padding:4px 8px;border-radius:8px;line-height:1;display:none">☰</button>
       <h2 id="pageTitle">لوحة المتابعة</h2>
       <div class="tb-actions">
         <button class="btn btn-primary admin-only" id="addEmpBtn">+ إضافة موظف</button>
@@ -3031,8 +3034,16 @@ function installPWA(){
 function toggleSidebar(){
   const sb = document.getElementById('sidebar');
   const ov = document.getElementById('sidebarOverlay');
-  sb.classList.toggle('open');
-  ov.style.display = sb.classList.contains('open') ? 'block' : 'none';
+  const isOpen = sb.classList.toggle('open');
+  ov.style.display = isOpen ? 'block' : 'none';
+  document.body.style.overflow = isOpen ? 'hidden' : '';
+}
+function closeSidebarMobile(){
+  const sb = document.getElementById('sidebar');
+  const ov = document.getElementById('sidebarOverlay');
+  sb.classList.remove('open');
+  ov.style.display = 'none';
+  document.body.style.overflow = '';
 }
 
 // Show hamburger on mobile, close sidebar on nav click
@@ -3043,10 +3054,7 @@ function initMobileNav(){
 
   if(isMobile){
     document.querySelectorAll('.nav-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.getElementById('sidebar').classList.remove('open');
-        document.getElementById('sidebarOverlay').style.display = 'none';
-      });
+      btn.addEventListener('click', () => closeSidebarMobile());
     });
   }
 }
