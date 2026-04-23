@@ -1242,7 +1242,7 @@ async function doLogin(){
   document.getElementById('loginErr').textContent = '';
   try {
     await auth.signInWithEmailAndPassword(u, p);
-    const fbUser = auth.currentUser;
+   const fbUser = await auth.currentUser;
     const uid = fbUser.uid;
     window._uid = uid;
     let profile = { name: fbUser.email, user: u, role:'admin', branch:'', uid };
