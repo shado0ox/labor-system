@@ -300,17 +300,15 @@ tbody td{padding:10px 10px;text-align:center;vertical-align:middle}
       appId            : "1:731386126615:web:184036a033b76386445752"
     };
     firebase.initializeApp(firebaseConfig);
-    const db   = firebase.firestore();
-    const auth = firebase.auth();
-    // ✅ حافظ على الجلسة عند تحديث الصفحة
-auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).then(() => {
-  auth.setPersistence(firebase.auth.Auth.Persistence.NONE).then(() => {
+const db   = firebase.firestore();
+const auth = firebase.auth();
+
+// ✅ Session Persistence
+auth.setPersistence(firebase.auth.Auth.Persistence.NONE).then(() => {
   auth.onAuthStateChanged(async (fbUser) => {
-    // تحقق هل هذا refresh أم تاب جديد
     const isRefresh = sessionStorage.getItem('loggedIn') === 'true';
 
     if (fbUser && isRefresh) {
-      // ✅ Refresh → استمر
       const uid = fbUser.uid;
       window.uid = uid;
       let profile = { name: fbUser.email, user: fbUser.email, role: 'admin', branch: '', uid };
@@ -331,19 +329,19 @@ auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).then(() => {
       renderActivityLog();
       await loadAll();
       await loadPendingUsers();
-    } else if (!fbUser || !isRefresh) {
-      // ❌ تاب جديد أو مش مسجل → اعرض شاشة الدخول
-      if (fbUser) await auth.signOut(); // امسح الجلسة لو موجودة
+    } else {
+      if (fbUser) await auth.signOut();
       currentUser = null;
       sessionStorage.removeItem('loggedIn');
       document.getElementById('loginScreen').classList.remove('hidden');
       document.getElementById('app').classList.remove('show');
     }
   });
-});
-    // ⏱️ Auto-Logout بعد 30 دقيقة من الخمول
+}); // ← قفلنا الـ then هنا بس
+
+// ⏱️ Auto-Logout بعد 30 دقيقة من الخمول
 let inactivityTimer;
-const INACTIVITY_LIMIT = 30 * 60 * 1000; // 30 دقيقة
+const INACTIVITY_LIMIT = 30 * 60 * 1000;
 
 function resetInactivityTimer() {
   clearTimeout(inactivityTimer);
@@ -355,12 +353,10 @@ function resetInactivityTimer() {
   }, INACTIVITY_LIMIT);
 }
 
-// ابدأ العداد عند أي نشاط من المستخدم
 ['click', 'keydown', 'mousemove', 'touchstart', 'scroll'].forEach(event => {
   document.addEventListener(event, resetInactivityTimer, true);
 });
 
-// ابدأ العداد عند تحميل الصفحة
 resetInactivityTimer();
   </script>
 </head>
