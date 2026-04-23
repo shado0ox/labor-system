@@ -2,8 +2,15 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
 <title>نظام إدارة العمالة — الإصدار النهائي</title>
+<meta name="description" content="نظام إدارة العمالة الاحترافي"/>
+<meta name="theme-color" content="#0d5189"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="نظام العمالة"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<link rel="manifest" id="pwaManifest"/>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
@@ -45,7 +52,7 @@ a{text-decoration:none;color:inherit}button,input,select,textarea{font:inherit;o
 
 /* ─── LAYOUT ─── */
 #app{display:none}#app.show{display:flex;min-height:100vh}
-.sidebar{width:265px;min-height:100vh;background:linear-gradient(180deg,#082d4f 0%,#0d5189 100%);color:#fff;display:flex;flex-direction:column;position:fixed;right:0;top:0;bottom:0;overflow-y:auto;z-index:40;box-shadow:-4px 0 24px rgba(0,0,0,.15)}
+.sidebar{width:265px;min-height:calc(var(--vh,1vh)*100);background:linear-gradient(180deg,#082d4f 0%,#0d5189 100%);color:#fff;display:flex;flex-direction:column;position:fixed;right:0;top:0;bottom:0;overflow-y:auto;z-index:40;box-shadow:-4px 0 24px rgba(0,0,0,.15)}
 .sb-brand{padding:20px 18px 16px;border-bottom:1px solid rgba(255,255,255,.1);display:flex;align-items:center;gap:12px}
 .sb-logo{width:42px;height:42px;border-radius:10px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;overflow:hidden}
 .sb-logo img{width:100%;height:100%;object-fit:cover;border-radius:10px}
@@ -232,16 +239,47 @@ tbody td{padding:10px 10px;text-align:center;vertical-align:middle}
 .badge-rejected{background:var(--red3);color:var(--red)}
 
 /* ─── RESPONSIVE ─── */
+/* ── TABLET ── */
 @media(max-width:900px){
   .sidebar{width:230px}.main{margin-right:230px}
-  .form-grid{grid-template-columns:1fr}.chart-row{grid-template-columns:1fr}
+  .form-grid{grid-template-columns:1fr}
+  .chart-row{grid-template-columns:1fr}
   .stmt-kpis{grid-template-columns:1fr 1fr}
   .kpi-grid{grid-template-columns:repeat(2,1fr)}
+  .modal{width:95vw;max-width:95vw}
 }
+/* ── MOBILE ── */
 @media(max-width:620px){
-  .sidebar{transform:translateX(265px);transition:.3s}.sidebar.open{transform:translateX(0)}
+  .sidebar{transform:translateX(265px);transition:.3s;width:265px}
+  .sidebar.open{transform:translateX(0)}
   .main{margin-right:0}
-  .wrap{padding:14px 14px}
+  .wrap{padding:10px 10px}
+  .topbar{padding:0 10px;gap:6px;flex-wrap:wrap}
+  .topbar h2{font-size:14px}
+  .btn{padding:7px 10px;font-size:12px}
+  .btn-sm{padding:4px 7px;font-size:11px}
+  .kpi-grid{grid-template-columns:repeat(2,1fr);gap:8px}
+  .kpi{padding:12px 10px}
+  .kpi .val{font-size:20px}
+  .card{padding:0}
+  .card-h{padding:12px 14px}
+  .card-b{padding:0}
+  .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  table{min-width:600px}
+  .modal{width:98vw;max-width:98vw;margin:10px auto;max-height:92vh;overflow-y:auto}
+  .modal-b{padding:14px}
+  .form-grid{grid-template-columns:1fr;gap:10px}
+  .tab-switch button{padding:7px 6px;font-size:12px}
+  .nav-btn{padding:10px 10px;font-size:12px}
+  .nav-btn span{display:none}
+  .filters{flex-direction:column;gap:8px}
+  .filters input,.filters select{width:100%}
+  #pwaInstallBar{display:flex}
+}
+/* ── SMALL MOBILE ── */
+@media(max-width:380px){
+  .kpi-grid{grid-template-columns:1fr 1fr}
+  .topbar h2{font-size:12px}
 }
 </style>
 
@@ -266,6 +304,17 @@ tbody td{padding:10px 10px;text-align:center;vertical-align:middle}
 <body>
 
 <!-- ════════ LOGIN ════════ -->
+<!-- PWA Install Bar -->
+<div id="pwaInstallBar" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9999;background:#0d5189;color:#fff;padding:10px 16px;align-items:center;justify-content:space-between;font-family:Tajawal,sans-serif;font-size:13px;gap:10px">
+  <span>📲 يمكنك إضافة النظام للشاشة الرئيسية كتطبيق</span>
+  <div style="display:flex;gap:8px">
+    <button onclick="installPWA()" style="background:#fff;color:#0d5189;border:none;border-radius:8px;padding:6px 14px;font-weight:700;cursor:pointer;font-family:Tajawal,sans-serif">تثبيت</button>
+    <button onclick="document.getElementById('pwaInstallBar').style.display='none'" style="background:transparent;color:#fff;border:1px solid rgba(255,255,255,.4);border-radius:8px;padding:6px 10px;cursor:pointer">✕</button>
+  </div>
+</div>
+<!-- Overlay for sidebar on mobile -->
+<div id="sidebarOverlay" onclick="toggleSidebar()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:90"></div>
+
 <div id="loginScreen">
   <div class="login-box">
     <div class="login-logo">
@@ -2896,4 +2945,87 @@ function exportCurrentPageExcel(){
   if(map[page.id]) exportTableExcel(map[page.id][0], map[page.id][1]);
   else toast('تصدير Excel غير متاح لهذه الصفحة','err');
 }
+
+// ═══════════════════════════════════════════════════════
+// PWA + MOBILE
+// ═══════════════════════════════════════════════════════
+
+// Inject manifest dynamically
+(function(){
+  const company = JSON.parse(localStorage.getItem(COMPANY_KEY)||'{}');
+  const appName = company.name || 'نظام العمالة';
+  const manifest = {
+    name: appName,
+    short_name: appName,
+    description: 'نظام إدارة العمالة الاحترافي',
+    start_url: './',
+    display: 'standalone',
+    orientation: 'portrait-primary',
+    background_color: '#0d5189',
+    theme_color: '#0d5189',
+    lang: 'ar',
+    dir: 'rtl',
+    icons: [
+      {src:'https://cdn-icons-png.flaticon.com/512/3135/3135715.png', sizes:'192x192', type:'image/png'},
+      {src:'https://cdn-icons-png.flaticon.com/512/3135/3135715.png', sizes:'512x512', type:'image/png'}
+    ]
+  };
+  const blob = new Blob([JSON.stringify(manifest)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  document.getElementById('pwaManifest').href = url;
+})();
+
+// PWA Install prompt
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('pwaInstallBar').style.display = 'flex';
+});
+window.addEventListener('appinstalled', () => {
+  document.getElementById('pwaInstallBar').style.display = 'none';
+  toast('✅ تم تثبيت التطبيق على جهازك!', 'ok');
+});
+function installPWA(){
+  if(!deferredPrompt){ toast('افتح القائمة ← إضافة إلى الشاشة الرئيسية', 'ok'); return; }
+  deferredPrompt.prompt();
+  deferredPrompt.userChoice.then(r => {
+    if(r.outcome==='accepted') toast('✅ جاري التثبيت...', 'ok');
+    deferredPrompt = null;
+    document.getElementById('pwaInstallBar').style.display = 'none';
+  });
+}
+
+// Sidebar toggle for mobile
+function toggleSidebar(){
+  const sb = document.getElementById('sidebar');
+  const ov = document.getElementById('sidebarOverlay');
+  sb.classList.toggle('open');
+  ov.style.display = sb.classList.contains('open') ? 'block' : 'none';
+}
+
+// Show hamburger on mobile, close sidebar on nav click
+function initMobileNav(){
+  const isMobile = window.innerWidth <= 620;
+  const toggleBtn = document.getElementById('sidebarToggle');
+  if(toggleBtn) toggleBtn.style.display = isMobile ? 'block' : 'none';
+
+  if(isMobile){
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.getElementById('sidebar').classList.remove('open');
+        document.getElementById('sidebarOverlay').style.display = 'none';
+      });
+    });
+  }
+}
+window.addEventListener('resize', initMobileNav);
+window.addEventListener('DOMContentLoaded', initMobileNav);
+
+// Fix 100vh on mobile browsers (address bar issue)
+function setVh(){
+  document.documentElement.style.setProperty('--vh', window.innerHeight * 0.01 + 'px');
+}
+window.addEventListener('resize', setVh);
+setVh();
 </script>
