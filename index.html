@@ -1255,6 +1255,7 @@ async function doLogin(){
       if(doc.exists) profile = { ...profile, ...doc.data(), user: u };
     } catch(e){}
     currentUser = profile;
+    sessionStorage.setItem('loggedIn', 'true'); 
     document.getElementById('loginScreen').classList.add('hidden');
     document.getElementById('app').classList.add('show');
     document.getElementById('sbUserName').textContent = profile.name;
@@ -1276,6 +1277,8 @@ async function doLogin(){
   }
 }
 function doLogout(){
+  sessionStorage.removeItem('loggedIn'); // ✅ هنا
+  auth.signOut();                        // ✅ هنا
   logActivity('login', 'تسجيل خروج: ' + (currentUser?.name||''));
   currentUser = null;
   document.getElementById('loginScreen').classList.remove('hidden');
