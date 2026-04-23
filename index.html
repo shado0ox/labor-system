@@ -2434,7 +2434,7 @@ function exportStmtPDF(e){
     const balColor = running > 0 ? "#dc2626" : running < 0 ? "#16a34a" : "#666";
     const balLabel = running > 0 ? "مدين" : running < 0 ? "دائن" : "متوازن";
     const note = (empNotes[t.key] !== undefined) ? empNotes[t.key] : t.bayan;
-    return "<tr style="background:" + t.color + "">" +
+    return "<tr style=\"background:" + t.color + "\">" +
       "<td style="padding:6px 8px;border-bottom:1px solid #ddd;text-align:center">" + (i+1) + "</td>" +
       "<td style="padding:6px 8px;border-bottom:1px solid #ddd;text-align:center">" + t.date + "</td>" +
       "<td style="padding:6px 8px;border-bottom:1px solid #ddd;text-align:center">" + t.hijri + "</td>" +
