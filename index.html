@@ -1745,6 +1745,16 @@ function renderArchive(){
 }
 
 // ─── STATEMENT ───
+
+const STMT_NOTES_KEY = 'proplusstmtnotes';
+function getStmtNotes(){ try{ return JSON.parse(localStorage.getItem(STMT_NOTES_KEY)||'{}'); }catch(e){ return {}; } }
+function saveStmtNote(empIqamaNo, rowKey, val){
+  const all = getStmtNotes();
+  if(!all[empIqamaNo]) all[empIqamaNo] = {};
+  all[empIqamaNo][rowKey] = val;
+  localStorage.setItem(STMT_NOTES_KEY, JSON.stringify(all));
+}
+
 function showStmt(e){
   stmtEmp = e;
   document.getElementById('stmtTitle').textContent = 'كشف العامل: ' + e.name;
