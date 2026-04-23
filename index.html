@@ -304,9 +304,13 @@ tbody td{padding:10px 10px;text-align:center;vertical-align:middle}
     const auth = firebase.auth();
     // ✅ حافظ على الجلسة عند تحديث الصفحة
 auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).then(() => {
+  auth.setPersistence(firebase.auth.Auth.Persistence.NONE).then(() => {
   auth.onAuthStateChanged(async (fbUser) => {
-    if (fbUser) {
-      // المستخدم مسجل دخول → استعد بيانات الجلسة
+    // تحقق هل هذا refresh أم تاب جديد
+    const isRefresh = sessionStorage.getItem('loggedIn') === 'true';
+
+    if (fbUser && isRefresh) {
+      // ✅ Refresh → استمر
       const uid = fbUser.uid;
       window.uid = uid;
       let profile = { name: fbUser.email, user: fbUser.email, role: 'admin', branch: '', uid };
@@ -327,9 +331,11 @@ auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).then(() => {
       renderActivityLog();
       await loadAll();
       await loadPendingUsers();
-    } else {
-      // غير مسجل دخول → اعرض شاشة الدخول
+    } else if (!fbUser || !isRefresh) {
+      // ❌ تاب جديد أو مش مسجل → اعرض شاشة الدخول
+      if (fbUser) await auth.signOut(); // امسح الجلسة لو موجودة
       currentUser = null;
+      sessionStorage.removeItem('loggedIn');
       document.getElementById('loginScreen').classList.remove('hidden');
       document.getElementById('app').classList.remove('show');
     }
