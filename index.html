@@ -2394,7 +2394,9 @@ async function deletePayment(payId, name, amount){
 }
 
 // ─── SETTINGS API SAVE ───
-document.getElementById('saveApiBtn')?.addEventListener('click', () => { toast('النظام يعمل علfunction exportStmtPDF(e){
+document.getElementById('saveApiBtn')?.addEventListener('click', () => { toast('النظام يعمل على الإعدادات', 'ok'); });
+
+function exportStmtPDF(e){
   const company = JSON.parse(localStorage.getItem(COMPANY_KEY)||'{}');
   const logo = localStorage.getItem(LOGO_KEY)||'';
   const pr = getPricing();
