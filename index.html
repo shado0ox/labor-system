@@ -2389,54 +2389,103 @@ document.getElementById('saveApiBtn')?.addEventListener('click', () => { toast('
   const logo = localStorage.getItem(LOGO_KEY)||'';
   const pr = getPricing();
   const pays = state.payments.filter(p => p.name===e.name || p.iqamaNo===e.iqamaNo);
-  const h = g2h(e.iqamaExpiry);
+  const h = g2h(e.iqamaExpiry) || '';
   const todayG = new Date().toLocaleDateString('ar-SA', {day:'numeric',month:'long',year:'numeric'});
   const HR_MONTHS=['','محرم','صفر','ربيع الأول','ربيع الآخر','جمادى الأولى','جمادى الآخرة','رجب','شعبان','رمضان','شوال','ذو القعدة','ذو الحجة'];
-  const STMT_KEY = 'proplusstmtnotes';
-  let notesData = {};
-  try{ notesData = JSON.parse(localStorage.getItem(STMT_KEY)||'{}'); }catch(e){}
-  const empNotes = notesData[e.iqamaNo] || {};
+
+  const notesKey = 'proplusstmtnotes';
+  let notesAll = {};
+  try { notesAll = JSON.parse(localStorage.getItem(notesKey) || '{}'); } catch(err) {}
+  const empNotes = notesAll[e.iqamaNo] || {};
 
   const ledger = [];
-  const iqBal = parseFloat(e.iqamaBalance||0);
-  const kfBal = parseFloat(e.kafalaCount||0) * (pr.kafala||250);
-  const otherBal = parseFloat(e.otherDebt||0);
-  if(iqBal>0) ledger.push({date:e.addedDate||'-', hijri:'', bayan:'رصيد إقامة افتتاحي', debit:iqBal, credit:0, color:'#fff0f0', key:'init_iqama'});
-  if(kfBal>0) ledger.push({date:e.addedDate||'-', hijri:'', bayan:'رصيد كفالة افتتاحي ('+(e.kafalaCount||0)+' شهر)', debit:kfBal, credit:0, color:'#fff0f0', key:'init_kafala'});
-  if(otherBal>0) ledger.push({date:e.addedDate||'-', hijri:'', bayan:(e.otherDebtDesc?'مديونات أخرى: '+e.otherDebtDesc:'مديونات أخرى'), debit:otherBal, credit:0, color:'#fff5f0', key:'init_other'});
+  const iqBal = Number(e.iqamaBalance || 0);
+  const kfBal = Number(e.kafalaCount || 0) * (pr.kafala || 250);
+  const otherBal = Number(e.otherDebt || 0);
 
-  pays.forEach((px,i)=>{
-    const isKafala=px.type&&px.type.startsWith('كفالة');
-    const isIqama=px.type&&px.type.startsWith('تجديد');
-    const isRamadan=isKafala&&px.hijriMonth&&+px.hijriMonth===9;
-    const hijriLabel=isKafala&&px.hijriMonth ? HR_MONTHS[+px.hijriMonth]+(px.hijriYear?' '+px.hijriYear:'') : (isIqama?'تجديد':'');
-    const rowKey = px.id || (px.date+'_'+i);
-    const defaultBayan = px.type + (isRamadan?' 🎁 مجاني':'') + (px.notes?' — '+px.notes:'');
-    ledger.push({date:px.date||'-', hijri:hijriLabel, bayan:defaultBayan, debit:0, credit:parseFloat(px.amount||0), color:isRamadan?'#f0fff4':isIqama?'#f0f4ff':'#f8fff8', key:rowKey});
+  if(iqBal > 0) ledger.push({date:e.addedDate||'-', hijri:'', bayan:'رصيد إقامة افتتاحي', debit:iqBal, credit:0, color:'#fff0f0', key:'init_iqama'});
+  if(kfBal > 0) ledger.push({date:e.addedDate||'-', hijri:'', bayan:'رصيد كفالة افتتاحي (' + (e.kafalaCount||0) + ' شهر)', debit:kfBal, credit:0, color:'#fff0f0', key:'init_kafala'});
+  if(otherBal > 0) ledger.push({date:e.addedDate||'-', hijri:'', bayan:(e.otherDebtDesc ? 'مديونات أخرى: ' + e.otherDebtDesc : 'مديونات أخرى'), debit:otherBal, credit:0, color:'#fff5f0', key:'init_other'});
+
+  pays.forEach((px, i) => {
+    const isKafala = px.type && px.type.startsWith('كفالة');
+    const isIqama = px.type && px.type.startsWith('تجديد');
+    const isRamadan = isKafala && px.hijriMonth && +px.hijriMonth === 9;
+    const hijriLabel = isKafala && px.hijriMonth ? (HR_MONTHS[+px.hijriMonth] + (px.hijriYear ? ' ' + px.hijriYear : '')) : (isIqama ? 'تجديد' : '');
+    const rowKey = px.id || (px.date + '_' + i);
+    const defaultBayan = px.type + (isRamadan ? ' 🎁 مجاني' : '') + (px.notes ? ' — ' + px.notes : '');
+    ledger.push({
+      date:px.date || '-',
+      hijri:hijriLabel,
+      bayan:defaultBayan,
+      debit:0,
+      credit:Number(px.amount || 0),
+      color:isRamadan ? '#f0fff4' : isIqama ? '#f0f4ff' : '#f8fff8',
+      key:rowKey
+    });
   });
 
-  ledger.sort((a,b)=>a.date>b.date?1:a.date<b.date?-1:0);
+  ledger.sort((a,b) => a.date > b.date ? 1 : a.date < b.date ? -1 : 0);
+
   let running = 0;
-  const totalDebit = ledger.reduce((s,t)=>s+t.debit,0);
-  const totalCredit = ledger.reduce((s,t)=>s+t.credit,0);
-  const lastKafala = [...ledger].reverse().find(t => t.bayan.includes('كفالة'));
-  const lastKafalaLabel = lastKafala ? (lastKafala.hijri || lastKafala.date || '-') : 'لا يوجد';
-  const rows = ledger.map((t,i)=>{ running += t.debit - t.credit; const balColor = running>0?'#dc2626':running<0?'#16a34a':'#666'; const balLabel = running>0?'مدين':running<0?'دائن':'متوازن'; const customBayan = empNotes[t.key] !== undefined ? empNotes[t.key] : t.bayan; return '<tr style="background:'+t.color+'">' +
-    '<td style="padding:6px 8px;border-bottom:1px solid #ddd;text-align:center">'+(i+1)+'</td>' +
-    '<td style="padding:6px 8px;border-bottom:1px solid #ddd;text-align:center">'+t.date+'</td>' +
-    '<td style="padding:6px 8px;border-bottom:1px solid #ddd;text-align:center">'+t.hijri+'</td>' +
-    '<td style="padding:6px 8px;border-bottom:1px solid #ddd;text-align:right">'+customBayan+'</td>' +
-    '<td style="padding:6px 8px;border-bottom:1px solid #ddd;text-align:center;color:#dc2626;font-weight:700">'+(t.debit?num(t.debit):'')+'</td>' +
-    '<td style="padding:6px 8px;border-bottom:1px solid #ddd;text-align:center;color:#16a34a;font-weight:700">'+(t.credit?num(t.credit):'')+'</td>' +
-    '<td style="padding:6px 8px;border-bottom:1px solid #ddd;text-align:center;color:'+balColor+';font-weight:700">'+num(Math.abs(running))+' '+balLabel+'</td>' +
-    '</tr>'; }).join('');
+  const totalDebit = ledger.reduce((s,t) => s + t.debit, 0);
+  const totalCredit = ledger.reduce((s,t) => s + t.credit, 0);
+  let lastKafalaLabel = 'لا يوجد';
+  for(let i = ledger.length - 1; i >= 0; i--){
+    if(ledger[i].bayan.indexOf('كفالة') !== -1){
+      lastKafalaLabel = ledger[i].hijri || ledger[i].date || 'لا يوجد';
+      break;
+    }
+  }
+
+  const rows = ledger.map((t, i) => {
+    running += t.debit - t.credit;
+    const balColor = running > 0 ? '#dc2626' : running < 0 ? '#16a34a' : '#666';
+    const balLabel = running > 0 ? 'مدين' : running < 0 ? 'دائن' : 'متوازن';
+    const note = (empNotes[t.key] !== undefined) ? empNotes[t.key] : t.bayan;
+    return '<tr style="background:' + t.color + '">' +
+      '<td style="padding:6px 8px;border-bottom:1px solid #ddd;text-align:center">' + (i+1) + '</td>' +
+      '<td style="padding:6px 8px;border-bottom:1px solid #ddd;text-align:center">' + t.date + '</td>' +
+      '<td style="padding:6px 8px;border-bottom:1px solid #ddd;text-align:center">' + t.hijri + '</td>' +
+      '<td style="padding:6px 8px;border-bottom:1px solid #ddd;text-align:right">' + note + '</td>' +
+      '<td style="padding:6px 8px;border-bottom:1px solid #ddd;text-align:center;color:#dc2626;font-weight:700">' + (t.debit ? num(t.debit) : '') + '</td>' +
+      '<td style="padding:6px 8px;border-bottom:1px solid #ddd;text-align:center;color:#16a34a;font-weight:700">' + (t.credit ? num(t.credit) : '') + '</td>' +
+      '<td style="padding:6px 8px;border-bottom:1px solid #ddd;text-align:center;color:' + balColor + ';font-weight:700">' + num(Math.abs(running)) + ' ' + balLabel + '</td>' +
+    '</tr>';
+  }).join('');
+
   const finalBal = totalDebit - totalCredit;
-  const finalColor = finalBal>0?'#dc2626':finalBal<0?'#16a34a':'#666';
-  const finalLabel = finalBal>0?'مدين':finalBal<0?'دائن':'متوازن';
-  const htmlDoc = '<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>كشف الحساب - '+e.name+'</title><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet"><style>*{box-sizing:border-box}body{font-family:'Cairo',Arial,sans-serif;margin:0;padding:0;color:#111;background:#fff}.page{padding:16px 18px 24px}.head{display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #0d5189;padding-bottom:10px;margin-bottom:12px;gap:12px}.brand{display:flex;align-items:center;gap:10px}.brand img{width:64px;height:64px;object-fit:contain;border-radius:10px}.brand .cname{font-size:18px;font-weight:800;color:#0d5189}.brand .sub{font-size:11px;color:#666;margin-top:2px}.title{font-size:15px;font-weight:800;color:#0d5189;text-align:left}.title small{display:block;font-size:11px;color:#666;margin-top:4px}.box{width:100%;border-collapse:collapse;margin-bottom:12px;font-size:12px}.box td{border:1px solid #ddd;padding:7px 9px}.box td:nth-child(odd){background:#f4f8ff;font-weight:700;width:22%}.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}.kpi{border-radius:8px;padding:9px;text-align:center}.kpi .l{font-size:10px;color:#666}.kpi .v{font-size:14px;font-weight:800;margin-top:3px}.trip{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}.trip .d{border-radius:8px;padding:9px;text-align:center;border-top:3px solid #ccc}.trip .l{font-size:10px;color:#666}.trip .v{font-size:13px;font-weight:800;margin-top:3px}.sec{font-size:13px;font-weight:800;color:#0d5189;border-bottom:2px solid #0d5189;padding-bottom:5px;margin:10px 0 8px}.tbl{width:100%;border-collapse:collapse;font-size:11px}.tbl th{background:#0d5189;color:#fff;padding:7px 6px;text-align:center}.tbl td{border-bottom:1px solid #ddd}.foot{margin-top:10px;font-size:10px;color:#777;text-align:center;border-top:1px solid #eee;padding-top:6px}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head><body><div class="page"><div class="head"><div class="brand">'+(logo?'<img src="'+logo+'">':'')+'<div><div class="cname">'+(company.name||'نظام إدارة العمالة')+'</div><div class="sub">كشف حساب الموظف</div></div></div><div class="title">كشف الحساب — مدين / دائن<small>'+todayG+'</small></div></div><table class="box"><tr><td>الاسم</td><td><strong>'+e.name+'</strong></td><td>رقم الإقامة</td><td>'+e.iqamaNo+'</td></tr><tr><td>الفرع</td><td>'+(e.branch||'-')+'</td><td>الجوال</td><td>'+(e.mobile||'-')+'</td></tr><tr><td>الانتهاء ميلادي</td><td>'+(e.iqamaExpiry||'-')+'</td><td>الانتهاء هجري</td><td><strong style="color:#0d5189">'+(h||'-')+'</strong></td></tr></table><div class="kpis"><div class="kpi" style="background:#fff0f0"><div class="l">إجمالي المديونيات</div><div class="v" style="color:#dc2626">'+num(totalDebit)+'</div></div><div class="kpi" style="background:#f0fff4"><div class="l">إجمالي المدفوع</div><div class="v" style="color:#16a34a">'+num(totalCredit)+'</div></div><div class="kpi" style="background:'+(finalBal>0?'#fff0f0':finalBal<0?'#f0fff4':'#f4f4f4')+'"><div class="l">الرصيد الحالي</div><div class="v" style="color:'+finalColor+'">'+num(Math.abs(finalBal))+'<br><span style="font-size:11px">'+finalLabel+'</span></div></div><div class="kpi" style="background:#f0f4ff"><div class="l">آخر شهر كفالة</div><div class="v" style="color:#0d5189">'+lastKafalaLabel+'</div></div></div><div class="trip"><div class="d" style="background:#fff0f0;border-top-color:#dc2626"><div class="l">رصيد الإقامة</div><div class="v" style="color:#dc2626">'+num(iqBal)+' ر.س</div></div><div class="d" style="background:#f0f4ff;border-top-color:#0d5189"><div class="l">رصيد الكفالة ('+(e.kafalaCount||0)+' شهر)</div><div class="v" style="color:#0d5189">'+num(kfBal)+' ر.س</div></div><div class="d" style="background:#fff8f0;border-top-color:#d97706"><div class="l">مديونات أخرى</div><div class="v" style="color:#d97706">'+num(otherBal)+' ر.س</div></div></div><div class="sec">📒 دفتر الحركات — مدين ودائن ('+ledger.length+' حركة)</div><table class="tbl"><thead><tr><th>#</th><th>التاريخ</th><th>الشهر الهجري</th><th>البيان</th><th>مدين</th><th>دائن</th><th>الرصيد</th></tr></thead><tbody>'+rows+'</tbody><tfoot><tr style="background:#f0f0f0;font-weight:800"><td colspan="4" style="padding:8px;text-align:center">الإجمالي</td><td style="padding:8px;text-align:center;color:#dc2626">'+num(totalDebit)+'</td><td style="padding:8px;text-align:center;color:#16a34a">'+num(totalCredit)+'</td><td style="padding:8px;text-align:center;color:'+finalColor+'">'+num(Math.abs(finalBal))+' ('+finalLabel+')</td></tr></tfoot></table><div class="foot">'+(company.name||'نظام إدارة العمالة')+' | طُبع بتاريخ '+todayG+'</div></div><script>window.onload=function(){window.print();}</script></body></html>';
+  const finalColor = finalBal > 0 ? '#dc2626' : finalBal < 0 ? '#16a34a' : '#666';
+  const finalLabel = finalBal > 0 ? 'مدين' : finalBal < 0 ? 'دائن' : 'متوازن';
+
+  const htmlDoc = [];
+  htmlDoc.push('<!doctype html>');
+  htmlDoc.push('<html lang="ar" dir="rtl">');
+  htmlDoc.push('<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">');
+  htmlDoc.push('<title>كشف الحساب - ' + e.name + '</title>');
+  htmlDoc.push('<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">');
+  htmlDoc.push('<style>');
+  htmlDoc.push('*{box-sizing:border-box}body{font-family:\'Cairo\',Arial,sans-serif;margin:0;padding:0;color:#111;background:#fff}');
+  htmlDoc.push('.page{padding:16px 18px 24px}.head{display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #0d5189;padding-bottom:10px;margin-bottom:12px;gap:12px}');
+  htmlDoc.push('.brand{display:flex;align-items:center;gap:10px}.brand img{width:64px;height:64px;object-fit:contain;border-radius:10px}.brand .cname{font-size:18px;font-weight:800;color:#0d5189}.brand .sub{font-size:11px;color:#666;margin-top:2px}');
+  htmlDoc.push('.title{font-size:15px;font-weight:800;color:#0d5189;text-align:left}.title small{display:block;font-size:11px;color:#666;margin-top:4px}');
+  htmlDoc.push('.box{width:100%;border-collapse:collapse;margin-bottom:12px;font-size:12px}.box td{border:1px solid #ddd;padding:7px 9px}.box td:nth-child(odd){background:#f4f8ff;font-weight:700;width:22%}');
+  htmlDoc.push('.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}.kpi{border-radius:8px;padding:9px;text-align:center}.kpi .l{font-size:10px;color:#666}.kpi .v{font-size:14px;font-weight:800;margin-top:3px}');
+  htmlDoc.push('.trip{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}.trip .d{border-radius:8px;padding:9px;text-align:center;border-top:3px solid #ccc}.trip .l{font-size:10px;color:#666}.trip .v{font-size:13px;font-weight:800;margin-top:3px}');
+  htmlDoc.push('.sec{font-size:13px;font-weight:800;color:#0d5189;border-bottom:2px solid #0d5189;padding-bottom:5px;margin:10px 0 8px}.tbl{width:100%;border-collapse:collapse;font-size:11px}.tbl th{background:#0d5189;color:#fff;padding:7px 6px;text-align:center}.tbl td{border-bottom:1px solid #ddd}.foot{margin-top:10px;font-size:10px;color:#777;text-align:center;border-top:1px solid #eee;padding-top:6px}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}');
+  htmlDoc.push('</style></head><body><div class="page">');
+  htmlDoc.push('<div class="head"><div class="brand">' + (logo ? '<img src="' + logo + '">' : '') + '<div><div class="cname">' + (company.name || 'نظام إدارة العمالة') + '</div><div class="sub">كشف حساب الموظف</div></div></div><div class="title">كشف الحساب — مدين / دائن<small>' + todayG + '</small></div></div>');
+  htmlDoc.push('<table class="box"><tr><td>الاسم</td><td><strong>' + e.name + '</strong></td><td>رقم الإقامة</td><td>' + e.iqamaNo + '</td></tr><tr><td>الفرع</td><td>' + (e.branch || '-') + '</td><td>الجوال</td><td>' + (e.mobile || '-') + '</td></tr><tr><td>الانتهاء ميلادي</td><td>' + (e.iqamaExpiry || '-') + '</td><td>الانتهاء هجري</td><td><strong style="color:#0d5189">' + (h || '-') + '</strong></td></tr></table>');
+  htmlDoc.push('<div class="kpis"><div class="kpi" style="background:#fff0f0"><div class="l">إجمالي المديونيات</div><div class="v" style="color:#dc2626">' + num(totalDebit) + '</div></div><div class="kpi" style="background:#f0fff4"><div class="l">إجمالي المدفوع</div><div class="v" style="color:#16a34a">' + num(totalCredit) + '</div></div><div class="kpi" style="background:' + (finalBal > 0 ? '#fff0f0' : finalBal < 0 ? '#f0fff4' : '#f4f4f4') + '"><div class="l">الرصيد الحالي</div><div class="v" style="color:' + finalColor + '">' + num(Math.abs(finalBal)) + '<br><span style="font-size:11px">' + finalLabel + '</span></div></div><div class="kpi" style="background:#f0f4ff"><div class="l">آخر شهر كفالة</div><div class="v" style="color:#0d5189">' + lastKafalaLabel + '</div></div></div>');
+  htmlDoc.push('<div class="trip"><div class="d" style="background:#fff0f0;border-top-color:#dc2626"><div class="l">رصيد الإقامة</div><div class="v" style="color:#dc2626">' + num(iqBal) + ' ر.س</div></div><div class="d" style="background:#f0f4ff;border-top-color:#0d5189"><div class="l">رصيد الكفالة (' + (e.kafalaCount || 0) + ' شهر)</div><div class="v" style="color:#0d5189">' + num(kfBal) + ' ر.س</div></div><div class="d" style="background:#fff8f0;border-top-color:#d97706"><div class="l">مديونات أخرى</div><div class="v" style="color:#d97706">' + num(otherBal) + ' ر.س</div></div></div>');
+  htmlDoc.push('<div class="sec">📒 دفتر الحركات — مدين ودائن (' + ledger.length + ' حركة)</div>');
+  htmlDoc.push('<table class="tbl"><thead><tr><th>#</th><th>التاريخ</th><th>الشهر الهجري</th><th>البيان</th><th>مدين</th><th>دائن</th><th>الرصيد</th></tr></thead><tbody>' + rows + '</tbody><tfoot><tr style="background:#f0f0f0;font-weight:800"><td colspan="4" style="padding:8px;text-align:center">الإجمالي</td><td style="padding:8px;text-align:center;color:#dc2626">' + num(totalDebit) + '</td><td style="padding:8px;text-align:center;color:#16a34a">' + num(totalCredit) + '</td><td style="padding:8px;text-align:center;color:' + finalColor + '">' + num(Math.abs(finalBal)) + ' (' + finalLabel + ')</td></tr></tfoot></table>');
+  htmlDoc.push('<div class="foot">' + (company.name || 'نظام إدارة العمالة') + ' | طُبع بتاريخ ' + todayG + '</div>');
+  htmlDoc.push('</div><script>window.onload=function(){window.print();}</script></body></html>');
+
   const w = window.open('', '_blank', 'width=900,height=700');
   w.document.open();
-  w.document.write(htmlDoc);
+  w.document.write(htmlDoc.join(''));
   w.document.close();
   toast('جاري فتح نافذة الطباعة...', 'ok');
 }
