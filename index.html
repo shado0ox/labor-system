@@ -1241,29 +1241,14 @@ async function doLogin(){
   const p = document.getElementById('loginPass').value.trim();
   document.getElementById('loginErr').textContent = '';
   try {
+    // سجل دخول بس ما نعملش حاجة تانية هنا
     await auth.signInWithEmailAndPassword(u, p);
-    const fbUser = auth.currentUser;
-    const uid = fbUser.uid;
-    window._uid = uid;
-    let profile = { name: fbUser.email, user: u, role:'admin', branch:'', uid };
-    try {
-      const doc = await db.collection('userProfiles').doc(uid).get();
-      if(doc.exists) profile = { ...profile, ...doc.data(), user: u };
-    } catch(e){}
-    currentUser = profile;
-    sessionStorage.setItem('loggedIn', 'true'); 
-    document.getElementById('loginScreen').classList.add('hidden');
-    document.getElementById('app').classList.add('show');
-    document.getElementById('sbUserName').textContent = profile.name;
-    const roleLabels = {admin:'مدير',viewer:'مشاهد',branch:'فرع '+profile.branch};
-    document.getElementById('sbUserRole').textContent = roleLabels[profile.role]||profile.role;
-    document.body.className = 'role-' + profile.role;
-    loadCompanySettings();  renderBranchList(); renderUsersTable();
-    logActivity('login', 'تسجيل دخول: ' + profile.name);
-    renderActivityLog();
-    await loadAll();
-    await loadPendingUsers();
-    } catch(err) {
+    
+    // كل حاجة هتتعمل في onAuthStateChanged تلقائياً
+    // بس نحط علامة الـ sessionStorage
+    sessionStorage.setItem('loggedIn', 'true');
+    
+  } catch(err) {
     console.error('doLogin error:', err);
     if(err.code && err.code.includes('auth')) {
       document.getElementById('loginErr').textContent = 'البريد الإلكتروني أو كلمة المرور غلط';
