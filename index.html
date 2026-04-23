@@ -375,7 +375,7 @@ tbody td{padding:10px 10px;text-align:center;vertical-align:middle}
 <div id="app">
 
   <!-- SIDEBAR -->
-  <aside class="sidebar">
+  <aside id="sidebar" class="sidebar">
     <div class="sb-brand">
       <div class="sb-logo" id="sbLogoWrap">
         <span class="sb-logo-txt" id="sbLogoTxt">🏢</span>
@@ -419,7 +419,7 @@ tbody td{padding:10px 10px;text-align:center;vertical-align:middle}
   <!-- MAIN -->
   <main class="main">
     <header class="topbar">
-      <button id="sidebarToggle" onclick="toggleSidebar()" style="background:transparent;border:none;color:var(--text);font-size:22px;cursor:pointer;padding:4px 8px;border-radius:8px;line-height:1;display:none">☰</button>
+      <button id="sidebarToggle" onclick="toggleSidebar()" style="background:transparent;border:none;color:var(--text);font-size:22px;cursor:pointer;padding:4px 8px;border-radius:8px;line-height:1">☰</button>
       <h2 id="pageTitle">لوحة المتابعة</h2>
       <div class="tb-actions">
         <button class="btn btn-primary admin-only" id="addEmpBtn">+ إضافة موظف</button>
@@ -3031,15 +3031,16 @@ function installPWA(){
 }
 
 // Sidebar toggle for mobile
+function getSidebar(){ return document.getElementById('sidebar') || document.querySelector('.sidebar'); }
 function toggleSidebar(){
-  const sb = document.getElementById('sidebar');
+  const sb = getSidebar();
   const ov = document.getElementById('sidebarOverlay');
   const isOpen = sb.classList.toggle('open');
   ov.style.display = isOpen ? 'block' : 'none';
   document.body.style.overflow = isOpen ? 'hidden' : '';
 }
 function closeSidebarMobile(){
-  const sb = document.getElementById('sidebar');
+  const sb = getSidebar();
   const ov = document.getElementById('sidebarOverlay');
   sb.classList.remove('open');
   ov.style.display = 'none';
