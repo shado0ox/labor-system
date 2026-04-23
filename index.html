@@ -328,8 +328,8 @@ tbody td{padding:10px 10px;text-align:center;vertical-align:middle}
       <h1 id="loginCompanyName">نظام إدارة العمالة</h1>
       <p id="loginCompanySub">تسجيل الدخول</p>
     </div>
-    <label>اسم المستخدم</label>
-    <input id="loginUser" type="text" placeholder="admin" autocomplete="username"/>
+    <label>االبريد الالكتروني</label>
+    <input id="loginUser" type="text" placeholder="example@email.com" autocomplete="username"/>
     <label>كلمة المرور</label>
     <input id="loginPass" type="password" placeholder="••••••" autocomplete="current-password"/>
     <button class="login-btn" onclick="doLogin()">دخول ←</button>
@@ -2457,7 +2457,7 @@ function exportStmtPDF(e){
   htmlDoc.push('<div class="sec">📒 دفتر الحركات — مدين ودائن (' + ledger.length + ' حركة)</div>');
   htmlDoc.push('<table class="tbl"><thead><tr><th>#</th><th>التاريخ</th><th>الشهر الهجري</th><th>البيان</th><th>مدين</th><th>دائن</th><th>الرصيد</th></tr></thead><tbody>' + rows + '</tbody><tfoot><tr style="background:#f0f0f0;font-weight:800"><td colspan="4" style="padding:8px;text-align:center">الإجمالي</td><td style="padding:8px;text-align:center;color:#dc2626">' + num(totalDebit) + '</td><td style="padding:8px;text-align:center;color:#16a34a">' + num(totalCredit) + '</td><td style="padding:8px;text-align:center;color:' + finalColor + '">' + num(Math.abs(finalBal)) + ' (' + finalLabel + ')</td></tr></tfoot></table>');
   htmlDoc.push('<div class="foot">' + (company.name || 'نظام إدارة العمالة') + ' | طُبع بتاريخ ' + todayG + '</div>');
-  htmlDoc.push('</div><script>window.onload=function(){window.print();}</script></body></html>');
+ htmlDoc.push('<\/div><scr'+'ipt>window.onload=function(){window.print();}<\/scr'+'ipt><\/body><\/html>');
   const w = window.open("", "_blank", "width=900,height=700");
   w.document.open();
   w.document.write(htmlDoc.join(""));
