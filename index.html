@@ -2434,16 +2434,16 @@ function exportStmtPDF(e){
     const balColor = running > 0 ? "#dc2626" : running < 0 ? "#16a34a" : "#666";
     const balLabel = running > 0 ? "مدين" : running < 0 ? "دائن" : "متوازن";
     const note = (empNotes[t.key] !== undefined) ? empNotes[t.key] : t.bayan;
-    return "<tr style=\"background:" + t.color + "\">" +
-      "<td style="padding:6px 8px;border-bottom:1px solid #ddd;text-align:center">" + (i+1) + "</td>" +
-      "<td style="padding:6px 8px;border-bottom:1px solid #ddd;text-align:center">" + t.date + "</td>" +
-      "<td style="padding:6px 8px;border-bottom:1px solid #ddd;text-align:center">" + t.hijri + "</td>" +
-      "<td style="padding:6px 8px;border-bottom:1px solid #ddd;text-align:right">" + note + "</td>" +
-      "<td style="padding:6px 8px;border-bottom:1px solid #ddd;text-align:center;color:#dc2626;font-weight:700">" + (t.debit ? num(t.debit) : "") + "</td>" +
-      "<td style="padding:6px 8px;border-bottom:1px solid #ddd;text-align:center;color:#16a34a;font-weight:700">" + (t.credit ? num(t.credit) : "") + "</td>" +
-      "<td style="padding:6px 8px;border-bottom:1px solid #ddd;text-align:center;color:" + balColor + ";font-weight:700">" + num(Math.abs(running)) + " " + balLabel + "</td>" +
-      "</tr>";
-  }).join("");
+    return '<tr style="background:' + t.color + '">' +
+      '<td style="padding:6px 8px;border-bottom:1px solid #ddd;text-align:center">' + (i+1) + '</td>' +
+      '<td style="padding:6px 8px;border-bottom:1px solid #ddd;text-align:center">' + t.date + '</td>' +
+      '<td style="padding:6px 8px;border-bottom:1px solid #ddd;text-align:center">' + t.hijri + '</td>' +
+      '<td style="padding:6px 8px;border-bottom:1px solid #ddd;text-align:right">' + note + '</td>' +
+      '<td style="padding:6px 8px;border-bottom:1px solid #ddd;text-align:center;color:#dc2626;font-weight:700">' + (t.debit ? num(t.debit) : '') + '</td>' +
+      '<td style="padding:6px 8px;border-bottom:1px solid #ddd;text-align:center;color:#16a34a;font-weight:700">' + (t.credit ? num(t.credit) : '') + '</td>' +
+      '<td style="padding:6px 8px;border-bottom:1px solid #ddd;text-align:center;color:' + balColor + ';font-weight:700">' + num(Math.abs(running)) + ' ' + balLabel + '</td>' +
+    '</tr>';
+  }).join('');
   const finalBal = totalDebit - totalCredit;
   const finalColor = finalBal > 0 ? "#dc2626" : finalBal < 0 ? "#16a34a" : "#666";
   const finalLabel = finalBal > 0 ? "مدين" : finalBal < 0 ? "دائن" : "متوازن";
