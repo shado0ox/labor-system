@@ -2356,68 +2356,177 @@ function exportTablePDF(tableId, title){
 }
 
 function exportStmtPDF(e){
-  const {jsPDF} = window.jspdf;
-  if(!jsPDF){ toast('مكتبة PDF لم تُحمَّل بعد', 'err'); return; }
-  const doc = new jsPDF({unit:'mm', format:'a4'});
   const company = JSON.parse(localStorage.getItem(COMPANY_KEY)||'{}');
-
-  // Header
-  doc.setFillColor(13, 81, 137);
-  doc.rect(0, 0, 210, 24, 'F');
-  doc.setTextColor(255,255,255);
-  doc.setFontSize(14); doc.setFont('helvetica','bold');
-  doc.text('Employee Statement', 105, 16, {align:'center'});
-
-  doc.setTextColor(80,80,80);
-  doc.setFontSize(9); doc.setFont('helvetica','normal');
-  doc.text('Prepared by: Shady Nassef  |  ' + (company.name||'Labor Management System'), 14, 32);
-  doc.text('Date: ' + new Date().toLocaleDateString('en-GB'), 195, 32, {align:'right'});
-
-  const h = g2h(e.iqamaExpiry);
-  doc.autoTable({
-    head:[['Field','Value']],
-    body:[
-      ['Name', e.name||''],
-      ['Iqama No.', e.iqamaNo||''],
-      ['Branch', toLatinSafe(e.branch||'')],
-      ['Mobile', e.mobile||''],
-      ['Expiry (Gregorian)', e.iqamaExpiry||''],
-      ['Expiry (Hijri)', h||''],
-      ['Days Left', String(e.daysLeft??'')],
-      ['Total Due (SAR)', String(num(e.totalDue||0))],
-      ['Total Paid (SAR)', String(num(e.totalPaid||0))],
-      ['Balance (SAR)', String(num(e.balance||0))]
-    ],
-    startY: 38,
-    styles:{fontSize:10, cellPadding:4},
-    headStyles:{fillColor:[13,81,137]},
-    columnStyles:{0:{fontStyle:'bold', fillColor:[238,244,251]}}
-  });
-
+  const logo = localStorage.getItem(LOGO_KEY)||'';
+  const pr = getPricing();
   const pays = state.payments.filter(p => p.name===e.name || p.iqamaNo===e.iqamaNo);
-  if(pays.length > 0){
-    doc.setFontSize(11); doc.setFont('helvetica','bold');
-    doc.setTextColor(13,81,137);
-    doc.text('Payment History', 14, doc.lastAutoTable.finalY + 12);
-    doc.autoTable({
-      head:[['Date','Amount (SAR)','Type','Notes']],
-      body: pays.map(p => [p.date||'', String(num(p.amount||0)), toLatinSafe(p.type||''), p.notes||'']),
-      startY: doc.lastAutoTable.finalY + 16,
-      styles:{fontSize:9, cellPadding:3},
-      headStyles:{fillColor:[38,96,41]}
-    });
-  }
+  const h = g2h(e.iqamaExpiry);
+  const today = new Date().toLocaleDateString('ar-SA-u-ca-islamic', {day:'numeric',month:'long',year:'numeric'});
+  const todayG = new Date().toLocaleDateString('ar-SA', {day:'numeric',month:'long',year:'numeric'});
 
-  // Footer
-  const pageCount = doc.internal.getNumberOfPages();
-  for(let i=1;i<=pageCount;i++){
-    doc.setPage(i);
-    doc.setFontSize(8); doc.setTextColor(150,150,150); doc.setFont('helvetica','normal');
-    doc.text('Page '+i+' of '+pageCount, 105, 290, {align:'center'});
-  }
+  const HR_MONTHS=['','محرم','صفر','ربيع الأول','ربيع الآخر','جمادى الأولى','جمادى الآخرة','رجب','شعبان','رمضان','شوال','ذو القعدة','ذو الحجة'];
 
-  doc.save('Statement_' + (e.name||'employee').replace(/\s/g,'_') + '.pdf');
-  toast('تم تصدير PDF', 'ok');
+  const paysRows = pays.length===0
+    ? '<tr><td colspan="5" style="text-align:center;padding:12px;color:#888">لا توجد مدفوعات</td></tr>'
+    : pays.map((px,i)=>{
+        const isKafala = px.type&&px.type.startsWith('كفالة');
+        const isIqama  = px.type&&px.type.startsWith('تجديد');
+        const hijriLabel = isKafala && px.hijriMonth ? HR_MONTHS[+px.hijriMonth]+(px.hijriYear?' '+px.hijriYear:'') : '';
+        const bg = isIqama?'#f0f4ff':isKafala?'#f0fff4':'#fff';
+        const amtColor = +px.amount===0?'color:#16a34a':'color:#111';
+        const amtTxt = +px.amount===0?'مجاني 🎁':num(px.amount||0)+' ر.س';
+        return `<tr style="background:${bg}">
+          <td style="padding:7px 10px;border-bottom:1px solid #eee;text-align:center">${i+1}</td>
+          <td style="padding:7px 10px;border-bottom:1px solid #eee;text-align:center">${px.date||''}</td>
+          <td style="padding:7px 10px;border-bottom:1px solid #eee;text-align:center;font-size:11px">${hijriLabel}</td>
+          <td style="padding:7px 10px;border-bottom:1px solid #eee;text-align:center;font-weight:800;${amtColor}">${amtTxt}</td>
+          <td style="padding:7px 10px;border-bottom:1px solid #eee;text-align:center">${px.type||''}</td>
+          <td style="padding:7px 10px;border-bottom:1px solid #eee;text-align:center;font-size:11px;color:#666">${px.notes||''}</td>
+        </tr>`;
+      }).join('');
+
+  const dl = e.daysLeft;
+  const dlColor = (dl!=null&&dl<=30)?'#dc2626':(dl!=null&&dl<=60)?'#d97706':'#16a34a';
+  const balColor = (e.balance||0)<0?'#dc2626':'#16a34a';
+
+  const printWin = window.open('','_blank','width=900,height=700');
+  printWin.document.write(`<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+<meta charset="UTF-8"/>
+<title>كشف حساب — ${e.name}</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Cairo',Arial,sans-serif;font-size:13px;color:#111;background:#fff;padding:0}
+  .page{width:210mm;min-height:297mm;padding:14mm 14mm 10mm 14mm;margin:0 auto;position:relative}
+  .header{display:flex;justify-content:space-between;align-items:center;padding-bottom:12px;border-bottom:3px solid #0d5189;margin-bottom:14px}
+  .company-info{display:flex;align-items:center;gap:12px}
+  .company-logo{max-height:55px;max-width:100px;object-fit:contain}
+  .company-name{font-size:18px;font-weight:800;color:#0d5189}
+  .company-sub{font-size:11px;color:#666;margin-top:3px}
+  .stmt-title{text-align:left;font-size:15px;font-weight:800;color:#0d5189;line-height:1.5}
+  .stmt-title span{display:block;font-size:11px;font-weight:400;color:#666}
+  .emp-table{width:100%;border-collapse:collapse;margin-bottom:14px;font-size:12px}
+  .emp-table td{padding:7px 10px;border:1px solid #e2e8f0}
+  .emp-table td:nth-child(odd){font-weight:700;background:#f0f5fc;width:22%}
+  .kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}
+  .kpi-box{border-radius:8px;padding:9px 8px;text-align:center}
+  .kpi-box .lbl{font-size:10px;color:#555;margin-bottom:3px}
+  .kpi-box .val{font-size:14px;font-weight:800}
+  .debt-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+  .debt-box{border-radius:8px;padding:9px;text-align:center;border-top:3px solid #ccc}
+  .debt-box .lbl{font-size:10px;color:#666;margin-bottom:3px}
+  .debt-box .val{font-size:13px;font-weight:800}
+  .sec-title{font-size:13px;font-weight:800;color:#0d5189;margin-bottom:8px;padding-bottom:4px;border-bottom:2px solid #0d5189}
+  .pays-table{width:100%;border-collapse:collapse;font-size:11px}
+  .pays-table th{background:#0d5189;color:#fff;padding:7px 8px;text-align:center;font-weight:700}
+  .pays-table td{padding:7px 8px;text-align:center;border-bottom:1px solid #eee}
+  .footer{position:fixed;bottom:8mm;left:14mm;right:14mm;text-align:center;font-size:10px;color:#aaa;border-top:1px solid #eee;padding-top:6px}
+  @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}.footer{position:fixed}}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="company-info">
+      ${logo ? `<img src="${logo}" class="company-logo"/>` : ''}
+      <div>
+        <div class="company-name">${company.name||'نظام إدارة العمالة'}</div>
+        <div class="company-sub">نظام إدارة العمالة الاحترافي</div>
+      </div>
+    </div>
+    <div class="stmt-title">
+      كشف حساب عامل
+      <span>📅 ${todayG}</span>
+    </div>
+  </div>
+
+  <!-- EMP INFO -->
+  <table class="emp-table">
+    <tr>
+      <td>الاسم</td><td><strong>${e.name||''}</strong></td>
+      <td>رقم الإقامة</td><td style="font-family:monospace">${e.iqamaNo||''}</td>
+    </tr>
+    <tr>
+      <td>الفرع</td><td>${e.branch||'-'}</td>
+      <td>الجوال</td><td>${e.mobile||'-'}</td>
+    </tr>
+    <tr>
+      <td>الانتهاء ميلادي</td><td>${e.iqamaExpiry||'-'}</td>
+      <td>الانتهاء هجري</td><td style="color:#0d5189;font-weight:700">${h||'-'}</td>
+    </tr>
+    <tr>
+      <td>الأيام المتبقية</td>
+      <td colspan="3"><span style="background:${dlColor};color:#fff;padding:2px 10px;border-radius:20px;font-size:12px">${dl!=null?dl+' يوم':'-'}</span></td>
+    </tr>
+  </table>
+
+  <!-- KPIs -->
+  <div class="kpi-row">
+    <div class="kpi-box" style="background:#f0f5fc">
+      <div class="lbl">إجمالي المدفوع</div>
+      <div class="val" style="color:#0d5189">${num(e.totalPaid||0)} ر.س</div>
+    </div>
+    <div class="kpi-box" style="background:#fff0f0">
+      <div class="lbl">إجمالي المستحق</div>
+      <div class="val" style="color:#dc2626">${num(e.totalDue||0)} ر.س</div>
+    </div>
+    <div class="kpi-box" style="background:${(e.balance||0)<0?'#fff0f0':'#f0fff4'}">
+      <div class="lbl">الرصيد المتبقي</div>
+      <div class="val" style="color:${balColor}">${num(e.balance||0)} ر.س</div>
+    </div>
+    <div class="kpi-box" style="background:#f0fff4">
+      <div class="lbl">شهور كفالة مدفوعة</div>
+      <div class="val" style="color:#16a34a">${pays.filter(x=>x.type&&x.type.startsWith('كفالة')).length} شهر</div>
+    </div>
+  </div>
+
+  <!-- DEBT BREAKDOWN -->
+  <div class="debt-row">
+    <div class="debt-box" style="background:#fff0f0;border-top-color:#dc2626">
+      <div class="lbl">رصيد الإقامة</div>
+      <div class="val" style="color:#dc2626">${num(e.iqamaBalance||0)} ر.س</div>
+    </div>
+    <div class="debt-box" style="background:#f0f4ff;border-top-color:#0d5189">
+      <div class="lbl">رصيد الكفالة (${e.kafalaCount||0} شهر)</div>
+      <div class="val" style="color:#0d5189">${num((e.kafalaCount||0)*(pr.kafala||250))} ر.س</div>
+    </div>
+    <div class="debt-box" style="background:#fff8f0;border-top-color:#d97706">
+      <div class="lbl">مديونات أخرى</div>
+      <div class="val" style="color:#d97706">${num(e.otherDebt||0)} ر.س</div>
+    </div>
+  </div>
+
+  <!-- PAYMENTS TABLE -->
+  <div class="sec-title">📋 سجل المدفوعات (${pays.length} عملية)</div>
+  <table class="pays-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>تاريخ الدفع</th>
+        <th>الشهر الهجري</th>
+        <th>المبلغ</th>
+        <th>النوع</th>
+        <th>ملاحظات</th>
+      </tr>
+    </thead>
+    <tbody>${paysRows}</tbody>
+  </table>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    ${company.name||'نظام إدارة العمالة'} &nbsp;|&nbsp; طُبع بتاريخ: ${todayG} &nbsp;|&nbsp; جميع المبالغ بالريال السعودي
+  </div>
+
+</div>
+<script>window.onload=()=>{window.print();}<\/script>
+</body>
+</html>`);
+  printWin.document.close();
+  toast('جاري فتح نافذة الطباعة...', 'ok');
 }
 
 function exportCurrentPage(){
