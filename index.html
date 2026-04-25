@@ -308,9 +308,8 @@ const secondaryAuth = secondaryApp.auth();
 // ✅ Session Persistence
 auth.setPersistence(firebase.auth.Auth.Persistence.SESSION).then(() => {
   auth.onAuthStateChanged(async (fbUser) => {
-    const isRefresh = sessionStorage.getItem('loggedIn') === 'true';
 
-    if (fbUser && isRefresh) {
+    if (fbUser) {
       const uid = fbUser.uid;
       window._uid = uid;
       let profile = { name: fbUser.email, user: fbUser.email, role: 'admin', branch: '', uid };
@@ -322,7 +321,7 @@ auth.setPersistence(firebase.auth.Auth.Persistence.SESSION).then(() => {
       document.getElementById('loginScreen').classList.add('hidden');
       document.getElementById('app').classList.add('show');
       document.getElementById('sbUserName').textContent = profile.name;
-      const roleLabels = { admin: 'مدير', viewer: 'مشاهد', branch: profile.branch };
+      const roleLabels = { admin: 'مدير', viewer: 'مشاهد', branch: 'فرع ' + profile.branch };
       document.getElementById('sbUserRole').textContent = roleLabels[profile.role] || profile.role;
       document.body.className = 'role-' + profile.role;
       loadCompanySettings();
@@ -332,7 +331,6 @@ auth.setPersistence(firebase.auth.Auth.Persistence.SESSION).then(() => {
       await loadAll();
       await loadPendingUsers();
     } else {
-      if (fbUser) await auth.signOut();
       currentUser = null;
       window._uid = null;
       sessionStorage.removeItem('loggedIn');
@@ -340,8 +338,7 @@ auth.setPersistence(firebase.auth.Auth.Persistence.SESSION).then(() => {
       document.getElementById('app').classList.remove('show');
     }
   });
-}); // ← قفلنا الـ then هنا بس
-
+});
 // ⏱️ Auto-Logout بعد 30 دقيقة من الخمول
 let inactivityTimer;
 const INACTIVITY_LIMIT = 30 * 60 * 1000;
