@@ -1241,10 +1241,12 @@ async function doLogin(){
   const p = document.getElementById('loginPass').value.trim();
   document.getElementById('loginErr').textContent = '';
   try {
-    await auth.signInWithEmailAndPassword(u, p);
-   const fbUser = await auth.currentUser;
+    const cred = await auth.signInWithEmailAndPassword(u, p);
+    const fbUser = cred.user;
+    if (!fbUser) throw new Error('فشل تسجيل الدخول، حاول مرة ثانية');
     const uid = fbUser.uid;
     window._uid = uid;
+    sessionStorage.setItem('loggedIn', 'true'); // ← مهم جداً للـ refresh
     let profile = { name: fbUser.email, user: u, role:'admin', branch:'', uid };
     try {
       const doc = await db.collection('userProfiles').doc(uid).get();
@@ -1403,16 +1405,13 @@ function filterPaymentsByRole(list){
 }
 
 // ─── UID-scoped collection helper ───
-function userCol(name){
-  const uid = window._uid || (auth.currentUser && auth.currentUser.uid);
-  if(!uid){
-    const u = auth.currentUser;
-    if(u){ window._uid = u.uid; return db.collection('users').doc(u.uid).collection(name); }
-    throw new Error('User not authenticated');
-  }
+function userCol(name) {
+  // دايماً خذ الـ uid الحي من auth أولاً، وارجع للـ cache بس لو مفيش
+  const uid = (auth.currentUser && auth.currentUser.uid) || window._uid;
+  if (!uid) throw new Error('User not authenticated');
+  window._uid = uid; // حدّث الـ cache
   return db.collection('users').doc(uid).collection(name);
 }
-
 // ══ Firebase apiPost ════════════════════════════════════════
 
 async function _getSettings() {
