@@ -334,6 +334,7 @@ auth.setPersistence(firebase.auth.Auth.Persistence.NONE).then(() => {
     } else {
       if (fbUser) await auth.signOut();
       currentUser = null;
+      window._uid = null;
       sessionStorage.removeItem('loggedIn');
       document.getElementById('loginScreen').classList.remove('hidden');
       document.getElementById('app').classList.remove('show');
