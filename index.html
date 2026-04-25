@@ -306,7 +306,7 @@ const auth = firebase.auth();
 const secondaryAuth = secondaryApp.auth();
 
 // ✅ Session Persistence
-auth.setPersistence(firebase.auth.Auth.Persistence.NONE).then(() => {
+auth.setPersistence(firebase.auth.Auth.Persistence.SESSION).then(() => {
   auth.onAuthStateChanged(async (fbUser) => {
     const isRefresh = sessionStorage.getItem('loggedIn') === 'true';
 
