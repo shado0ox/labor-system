@@ -302,6 +302,8 @@ tbody td{padding:10px 10px;text-align:center;vertical-align:middle}
     firebase.initializeApp(firebaseConfig);
 const db   = firebase.firestore();
 const auth = firebase.auth();
+    const secondaryApp = firebase.initializeApp(firebaseConfig, 'secondary');
+const secondaryAuth = secondaryApp.auth();
 
 // ✅ Session Persistence
 auth.setPersistence(firebase.auth.Auth.Persistence.NONE).then(() => {
@@ -310,7 +312,7 @@ auth.setPersistence(firebase.auth.Auth.Persistence.NONE).then(() => {
 
     if (fbUser && isRefresh) {
       const uid = fbUser.uid;
-      window.uid = uid;
+      window._uid = uid;
       let profile = { name: fbUser.email, user: fbUser.email, role: 'admin', branch: '', uid };
       try {
         const doc = await db.collection('userProfiles').doc(uid).get();
@@ -1274,16 +1276,17 @@ async function doLogin(){
   }
 }
 
-function doLogout(){
-  sessionStorage.removeItem('loggedIn'); // ✅ هنا
-  auth.signOut();                        // ✅ هنا
+async function doLogout(){
+  sessionStorage.removeItem('loggedIn');
   logActivity('login', 'تسجيل خروج: ' + (currentUser?.name||''));
   currentUser = null;
+  window._uid = null;
   document.getElementById('loginScreen').classList.remove('hidden');
   document.getElementById('app').classList.remove('show');
   document.getElementById('loginPass').value = '';
   document.getElementById('loginErr').textContent = '';
   document.body.className = '';
+  try { await auth.signOut(); } catch(e){}
 }
 
 // ─── REGISTER / LOGIN TOGGLE ───
@@ -2365,16 +2368,17 @@ async function addUser(){
   const branch = document.getElementById('uBranch').value;
   if(!name||!email||!pass){ toast('أكمل الحقول المطلوبة', 'err'); return; }
   try {
-    const cred = await auth.createUserWithEmailAndPassword(email, pass);
-    const uid  = cred.user.uid;
-    await db.collection('userProfiles').doc(uid).set({
-      uid, name, email, role, branch,
-      createdAt: new Date().toISOString()
-    });
-    closeModal('addUserModal');
-    renderUsersTable();
-    toast('تم إضافة المستخدم ✅', 'ok');
-    logActivity('add', `إضافة مستخدم جديد: ${name} (${email})`);
+    const cred = await secondaryAuth.createUserWithEmailAndPassword(email, pass);
+const uid  = cred.user.uid;
+await db.collection('userProfiles').doc(uid).set({
+  uid, name, email, role, branch,
+  createdAt: new Date().toISOString()
+});
+await secondaryAuth.signOut(); // ← أضف هذا عشان تنظف الـ secondary session
+closeModal('addUserModal');
+renderUsersTable();
+toast('تم إضافة المستخدم ✅', 'ok');
+logActivity('add', `إضافة مستخدم جديد: ${name} (${email})`);
   } catch(e){
     const msgs = {
       'auth/email-already-in-use': 'البريد الإلكتروني مستخدم بالفعل',
